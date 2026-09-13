@@ -1,0 +1,36 @@
+﻿# 构建产物
+target/
+src-tauri/target/
+src-tauri/gen/schemas/
+build-all.log
+build-out.log
+build-err.log
+build-done.txt
+
+# 本地资源（版权原因不入库，自行放置后可离线使用）
+app/songs/*.mp3
+app/songs/*.wav
+app/songs/*.ogg
+app/songs/*.m4a
+
+# 开发过程文件（模型生成流水线等）
+_dev/
+renders/
+__pycache__/
+*.pyc
+
+# 打包输出
+*.zip
+*.nsis.zip
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+
+# 依赖
+node_modules/
+
+# 发布产物
+dist/

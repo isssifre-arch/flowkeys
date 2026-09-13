@@ -1,0 +1,50 @@
+[
+ {
+  "id": "dayu",
+  "name": "大鱼",
+  "artist": "周深 · 简谱手抄（练习版）",
+  "file": "dayu.json",
+  "bpm": 72,
+  "duration": 118.67,
+  "notes": 170
+ },
+ {
+  "id": "abc",
+  "name": "ABC歌（字母歌）",
+  "artist": "儿歌 · 内置（示范曲）",
+  "file": "abc.json",
+  "bpm": 120,
+  "duration": 24.5,
+  "notes": 42
+ },
+ {
+  "id": "xiaoban",
+  "name": "小半",
+  "artist": "虾壹（翻唱）",
+  "file": "xiaoban.json",
+  "audio": "xiaoban.mp3",
+  "bpm": 81.5,
+  "duration": 316.93,
+  "notes": 484
+ },
+ {
+  "id": "xuni",
+  "name": "虚拟",
+  "artist": "星河沉降（翻唱）",
+  "file": "xuni.json",
+  "audio": "xuni.mp3",
+  "bpm": 65.0,
+  "duration": 238.25,
+  "notes": 746
+ },
+ {
+  "id": "zouma",
+  "name": "走马",
+  "artist": "陈粒",
+  "file": "zouma.json",
+  "audio": "zouma.mp3",
+  "bpm": 69.0,
+  "duration": 236.54,
+  "notes": 885
+ }
+]

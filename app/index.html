@@ -1,0 +1,1429 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<title>流光钢琴</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#23272e;font-family:"Microsoft YaHei",system-ui,sans-serif}
+  #app{position:fixed;inset:0} canvas{display:block}
+  button{cursor:pointer;font-family:inherit}
+  /* 仿真谱面（歌曲模式 · 暗色玻璃） */
+  #staff{display:none;position:fixed;top:0;left:0;right:0;height:37vh;z-index:8;background:rgba(12,16,24,.88);backdrop-filter:blur(12px);border-bottom:1px solid rgba(103,232,249,.22);box-shadow:0 6px 22px rgba(0,0,0,.5)}
+  body.playmode #staff{display:block}
+  #staffHead{display:flex;align-items:baseline;gap:12px;padding:10px 18px 0;color:#e5e7eb}
+  #staffHead b{font-size:15px}
+  #staffHead .meta{font-size:12px;color:#94a3b8}
+  #staffHead .chord{margin-left:auto;font-size:22px;font-weight:800;color:#67e8f9;letter-spacing:.02em}
+  #staffBody{position:relative;height:calc(37vh - 44px);overflow-y:auto;overflow-x:hidden}
+  #staffCursor{position:absolute;top:0;bottom:0;width:2px;background:#ef4444;z-index:5;display:none;box-shadow:0 0 6px #ef4444}
+  .sysRow{position:relative;margin:6px auto}
+  .sysRow .barChord{position:absolute;top:-2px;font-size:15px;font-weight:800;color:#67e8f9;transform:translateX(-50%)}
+  .sysRow.playing{outline:1.5px solid rgba(103,232,249,.35);outline-offset:-2px;border-radius:6px;background:rgba(103,232,249,.07)}
+  /* 启动小条 */
+  #splash{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:12;display:none;align-items:center;gap:12px;background:rgba(15,20,28,.92);border:1px solid #374151;border-radius:999px;padding:10px 12px 10px 18px;color:#e5e7eb;font-size:13px;backdrop-filter:blur(8px)}
+  #splash.show{display:flex}
+  #splash button{border:1px solid #67e8f9;background:transparent;color:#67e8f9;font-size:13px;padding:7px 16px;border-radius:999px}
+  #splash button:hover{background:#67e8f9;color:#111827}
+  /* 底部胶囊 */
+  #dock{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:10;display:flex;align-items:center;gap:10px;background:rgba(15,20,28,.88);border:1px solid #374151;border-radius:999px;padding:7px 12px;color:#e5e7eb;font-size:12.5px;backdrop-filter:blur(10px);transition:opacity .5s}
+  #dock.dim{opacity:.25}
+  #dock:hover{opacity:1}
+  #dock button{border:none;background:transparent;color:#e5e7eb;font-size:12.5px;padding:5px 10px;border-radius:999px}
+  #dock button:hover{background:rgba(255,255,255,.1)}
+  #dock select{border:none;background:transparent;color:#e5e7eb;font-size:12.5px;outline:none;cursor:pointer}
+  #dock select option{background:#111827}
+  #dock input[type=range]{width:84px;accent-color:#67e8f9}
+  #dock .sep{width:1px;height:16px;background:#374151}
+  /* 歌曲模式transport */
+  #dockSong,#dockPractice{display:none;align-items:center;gap:8px}
+  #dockSong .play{font-size:15px;width:34px;height:34px;border-radius:50%;background:#0e7490;color:#fff;display:flex;align-items:center;justify-content:center}
+  #dockSong .play:hover{filter:brightness(1.15)}
+  #dockSong .tname{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e5e7eb}
+  #dockSong input[type=range]{width:150px}
+  #dockSong .score{color:#4ade80;font-variant-numeric:tabular-nums;min-width:60px;text-align:center}
+  #dockSong .x{color:#9ca3af;font-size:15px;padding:4px 8px}
+  #bAcc{border:1px solid #374151;background:transparent;color:#e5e7eb;font-size:12px;padding:4px 10px;border-radius:999px}
+  #bAcc.off{color:#6b7280;text-decoration:line-through}
+  /* 简谱谱面（暗色） */
+  .jpRow{height:88px}
+  .jpBar{position:absolute;top:10px;bottom:8px;border-right:1px solid rgba(148,163,184,.22);border-left:1px solid rgba(148,163,184,.14)}
+  .jpNote{position:absolute;top:16px;display:flex;flex-direction:column;align-items:center;transform:translateX(-50%);color:#e5e7eb;min-width:24px}
+  .jpNote .num{font-size:21px;font-weight:800;line-height:1.05;display:flex;align-items:center;padding-bottom:1px;white-space:nowrap;letter-spacing:1px}
+  .jpNote i{font-style:normal}
+  .jpNote .oct{font-size:13px;line-height:12px;color:#67e8f9;font-weight:900;letter-spacing:2px;margin:1px 0}
+  .jpNote .dash{font-weight:800;color:#94a3b8;margin-left:2px}
+  .jpNote.jp8 .num{border-bottom:2px solid #e5e7eb}
+  .jpNote.jp16 .num{border-bottom:2px solid #e5e7eb;box-shadow:0 4px 0 -1px #e5e7eb}
+  .jpRest{position:absolute;left:12px;top:24px;color:#64748b;font-weight:700}
+  /* 钢琴块模式 */
+  #tiles{position:fixed;inset:0;z-index:9;display:none;pointer-events:none}
+  body.playmode.score-tiles #staff{display:none}
+  body.playmode.score-tiles #tiles{display:block}
+  #tiles canvas{display:block;width:100%;height:100%;pointer-events:none}
+  /* 曲目列表 */
+  #songPop,#followPop{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:11;display:none;background:rgba(15,20,28,.96);border:1px solid #374151;border-radius:14px;padding:8px;min-width:220px;backdrop-filter:blur(10px)}
+  #songPop.show,#followPop.show{display:block}
+  #songPop .item,#followPop .item{display:flex;justify-content:space-between;gap:14px;padding:9px 12px;border-radius:8px;color:#e5e7eb;font-size:13px;cursor:pointer}
+  #songPop .item:hover,#followPop .item:hover{background:rgba(103,232,249,.12)}
+  #songPop .item small,#followPop .item small{color:#6b7280}
+  #dockPractice .pNext{color:#fbbf24;font-weight:700;white-space:nowrap}
+  #dockPractice .pProg{color:#9ca3af;font-variant-numeric:tabular-nums}
+  #dockPractice button{border:1px solid #374151;background:transparent;color:#e5e7eb;font-size:12px;padding:4px 10px;border-radius:999px}
+  #dockPractice button:hover{background:rgba(255,255,255,.1)}
+  /* 状态点 / 提示 */
+  #dot{position:fixed;left:16px;bottom:18px;width:8px;height:8px;border-radius:50%;background:#4b5563;z-index:9;transition:background .4s}
+  #dot.on{background:#4ade80}
+  #toast{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:13;background:rgba(15,20,28,.92);border:1px solid #374151;color:#e5e7eb;font-size:12.5px;padding:8px 16px;border-radius:999px;opacity:0;transition:opacity .4s;pointer-events:none}
+  #toast.show{opacity:1}
+  #err{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:20;display:none;background:#7a1a1a;color:#fff;font-size:12px;padding:8px 14px;border-radius:8px;max-width:80vw}
+  /* 背景氛围 + 首次引导 */
+  #vig{position:fixed;inset:0;pointer-events:none;z-index:2;display:none}
+  #tips{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);z-index:12;background:rgba(15,20,28,.94);border:1px solid #374151;border-radius:14px;padding:14px 18px 12px;color:#e5e7eb;font-size:13px;line-height:2;display:none;backdrop-filter:blur(10px);min-width:300px}
+  #tips.show{display:block}
+  #tips b{color:#67e8f9}
+  #tips button{margin-top:8px;border:1px solid #67e8f9;background:transparent;color:#67e8f9;border-radius:999px;padding:5px 16px;font-size:12.5px;float:right;cursor:pointer}
+  #tips button:hover{background:#67e8f9;color:#111827}
+  /* 按键高亮 + 音名标签 + 设置面板 */
+  #noteLayer{position:fixed;inset:0;pointer-events:none;z-index:7;overflow:hidden}
+  .noteLbl{position:absolute;transform:translate(-50%,-100%);background:rgba(15,20,28,.92);border:1px solid rgba(103,232,249,.7);color:#c8f7ff;font-weight:700;padding:3px 9px;border-radius:999px;font-size:14px;line-height:1;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.45),0 0 14px rgba(56,189,248,.28)}
+  #setPop{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:11;display:none;background:rgba(15,20,28,.96);border:1px solid #374151;border-radius:14px;padding:10px 14px;min-width:330px;backdrop-filter:blur(10px);color:#e5e7eb;font-size:13px}
+  #setPop.show{display:block}
+  #setPop .row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:7px 2px}
+  #setPop .row>span{color:#cbd5e1}
+  #setPop select{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:8px;font-size:12.5px;padding:4px 6px;outline:none}
+  #setPop input[type=range]{width:110px;accent-color:#67e8f9}
+  #setPop .sw{cursor:pointer;display:inline-flex;align-items:center}
+  #setPop .sw input{display:none}
+  #setPop .sw i{width:36px;height:20px;border-radius:999px;background:#374151;position:relative;transition:background .2s;display:block}
+  #setPop .sw i:after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#e5e7eb;transition:left .2s}
+  #setPop .sw input:checked+i{background:#0e7490}
+  #setPop .sw input:checked+i:after{left:18px}
+  #setPop .swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+  #setPop .swatch.sel{border-color:#e5e7eb}
+  #setColors,#setHintColors{display:inline-flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+  #setPop input[type=color]{width:26px;height:24px;border:1px solid #374151;border-radius:8px;background:#111827;padding:1px;cursor:pointer}
+  /* 设置面板 · 两级分类 */
+  #setPop{min-width:390px;max-width:470px}
+  #setHead{display:flex;align-items:center;gap:10px;padding:2px 2px 9px;border-bottom:1px solid rgba(148,163,184,.18);margin-bottom:8px}
+  #setHead #setTitle{font-size:14px;font-weight:700}
+  #setHead #setBack{display:none;border:1px solid #374151;background:transparent;color:#e5e7eb;width:26px;height:26px;border-radius:9px;font-size:15px;line-height:1;padding:0}
+  #setHead #setBack:hover{background:rgba(103,232,249,.12)}
+  #setGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 0}
+  #setGrid .card{border:1px solid #374151;border-radius:12px;padding:10px 12px;cursor:pointer;background:rgba(255,255,255,.03)}
+  #setGrid .card:hover{background:rgba(103,232,249,.10);border-color:rgba(103,232,249,.4)}
+  #setGrid .card b{display:block;font-size:13.5px}
+  #setGrid .card small{color:#94a3b8;font-size:11px}
+  #setPop .pane{display:none;max-height:52vh;overflow-y:auto;padding-right:2px}
+  #setPop .pane.on{display:block}
+  #setPop .mini{border:1px solid #374151;background:transparent;color:#e5e7eb;border-radius:8px;font-size:12px;padding:4px 12px}
+  #setPop .mini:hover{background:rgba(103,232,249,.12)}
+  #setPop input[type=text]{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:8px;font-size:12px;padding:4px 8px;outline:none;width:80px}
+  #setPop .hintline{color:#94a3b8;font-size:11.5px;line-height:1.8;padding:4px 2px}
+  #sf2FavBtn{border:1px solid #374151;background:transparent;color:#e5e7eb;border-radius:8px;font-size:13px;padding:2px 8px}
+  #sf2FavBtn.on{color:#fbbf24;border-color:#fbbf24}
+  .sf2Wrap{display:flex;gap:6px;align-items:center;justify-content:flex-end;max-width:250px}
+  .sf2Wrap select{max-width:120px}
+  /* 结算面板 */
+  #resultPop{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:15;display:none;background:rgba(15,20,28,.97);border:1px solid #374151;border-radius:16px;padding:18px 22px;min-width:250px;color:#e5e7eb;font-size:13px;text-align:center;backdrop-filter:blur(12px)}
+  #resultPop.show{display:block}
+  #resultPop .big{font-size:23px;font-weight:800;color:#fbbf24;letter-spacing:3px;margin:6px 0}
+  #resultPop .ln{display:flex;justify-content:space-between;gap:26px;padding:5px 0;color:#cbd5e1}
+  #resultPop .ln b{color:#fff}
+  #resultPop .btns{margin-top:12px;display:flex;gap:10px;justify-content:center}
+  #resultPop button{border:1px solid #374151;background:transparent;color:#e5e7eb;border-radius:999px;padding:6px 18px;font-size:12.5px}
+  #resultPop button.pri{border-color:#67e8f9;color:#67e8f9}
+  #resultPop button:hover{background:rgba(103,232,249,.12)}
+  /* 录音面板 + 踏板灯 */
+  #recPop{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:11;display:none;background:rgba(15,20,28,.96);border:1px solid #374151;border-radius:14px;padding:10px 14px;min-width:240px;backdrop-filter:blur(10px);color:#e5e7eb;font-size:12.5px}
+  #recPop.show{display:block}
+  #recPop .row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:6px 0}
+  #recPop button{border:1px solid #374151;background:transparent;color:#e5e7eb;border-radius:999px;padding:5px 14px;font-size:12px}
+  #recPop button:hover{background:rgba(103,232,249,.12)}
+  #recPop button.rec-on{border-color:#f87171;color:#f87171}
+  #bRec.rec-on{color:#f87171}
+  #pedalLed{position:fixed;left:32px;bottom:18px;z-index:9;display:none;font-size:10.5px;color:#64748b;background:rgba(15,20,28,.8);border:1px solid #374151;border-radius:999px;padding:2px 9px}
+  #pedalLed.down{color:#67e8f9;border-color:#67e8f9}
+  #dockSong .ab{font-size:11.5px;padding:3px 9px;border:1px solid #374151;border-radius:999px;background:transparent;color:#e5e7eb}
+  #dockSong .ab.set{border-color:#fbbf24;color:#fbbf24}
+  #dockSong .ab.looped{border-color:#67e8f9;color:#67e8f9}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="staff">
+  <div id="staffHead"><b id="staffTitle"></b><span class="meta" id="staffMeta"></span><span class="chord" id="chordNow"></span></div>
+  <div id="staffBody"><div id="staffCursor"></div><div id="staffSheets"></div></div>
+</div>
+<div id="splash"><span id="splashText">正在扫描 MIDI 键盘…</span><button id="splashBtn" style="display:none">开始</button></div>
+<div id="dock">
+  <div id="dockIdle" style="display:flex;align-items:center;gap:10px">
+    <button id="bSongs">曲目</button>
+    <div class="sep"></div>
+    <button id="bFollow" title="跟弹练习：不限速度，按自己的节奏来">跟弹</button>
+    <div class="sep"></div>
+    <select id="timbre"></select>
+    <div class="sep"></div>
+    <input id="vol" type="range" min="0" max="100" value="80" title="音量">
+    <div class="sep"></div>
+    <button id="bRec" style="display:none" title="录音">● 录音</button>
+    <div class="sep" id="recSep" style="display:none"></div>
+    <button id="bSet">设置</button>
+  </div>
+  <div id="dockSong">
+    <button class="x" id="bExit">×</button>
+    <span class="tname" id="songName"></span>
+    <button class="play" id="bPlayToggle">▶</button>
+    <input id="prog" type="range" min="0" max="1000" value="0">
+    <select id="rate"><option value="1">1x</option><option value="0.75">0.75x</option><option value="0.5">0.5x</option><option value="0.25">0.25x</option></select>
+    <button class="ab" id="bSA" style="display:none" title="把当前进度设为循环起点 A">A</button>
+    <button class="ab" id="bSB" style="display:none" title="把当前进度设为循环终点 B">B</button>
+    <button class="ab" id="bSLoop" style="display:none" title="开启/关闭 A-B 循环">循环</button>
+    <select id="scoreMode" title="谱面模式"><option value="staff">五线谱</option><option value="jianpu">简谱</option><option value="tiles">钢琴块</option></select>
+    <button id="bAcc" class="off" title="背景伴奏 开/关">伴奏</button>
+    <span class="score" id="score">—</span>
+  </div>
+  <div id="dockPractice">
+    <button class="x" id="bPExit">×</button>
+    <span class="tname" id="pName"></span>
+    <span class="pNext" id="pNext"></span>
+    <span class="pProg" id="pProg"></span>
+    <button id="bPRestart">重来</button>
+  </div>
+</div>
+<div id="songPop"></div>
+<div id="followPop"></div>
+<div id="setPop">
+  <div id="setHead">
+    <button id="setBack" title="返回">‹</button>
+    <span id="setTitle">设置</span>
+  </div>
+  <div id="setGrid">
+    <div class="card" data-pane="appearance"><b>外观</b><small>主题 · 高亮 · 音名</small></div>
+    <div class="card" data-pane="sound"><b>音色</b><small>输出 · 音色包 · 混响</small></div>
+    <div class="card" data-pane="follow"><b>跟弹练习</b><small>评分 · 难度 · 循环 · 分离</small></div>
+    <div class="card" data-pane="keys"><b>键盘弹奏</b><small>电脑键盘 · 力度 · 踏板</small></div>
+    <div class="card" data-pane="rec"><b>录音</b><small>录制 · 回放</small></div>
+    <div class="card" data-pane="misc"><b>通用</b><small>诊断 · 重置 · 版本</small></div>
+  </div>
+  <div class="pane" data-pane="appearance">
+    <div class="row"><span>背景主题</span><select id="setBg"><option value="deep">深空</option><option value="warm">暖夜</option><option value="mist">晨雾</option><option value="classic">经典灰</option></select></div>
+    <div class="row"><span>按键高亮</span><label class="sw"><input type="checkbox" id="setHL" checked><i></i></label></div>
+    <div class="row"><span>高亮颜色</span><span id="setColors"></span></div>
+    <div class="row"><span>音名提示</span><label class="sw"><input type="checkbox" id="setNotes" checked><i></i></label></div>
+    <div class="row"><span>音名格式</span><select id="setMode"><option value="name">音名 · C4</option><option value="solfa">唱名 · do</option><option value="jianpu">简谱 · 1</option><option value="midi">MIDI · 60</option></select></div>
+    <div class="row"><span>标签大小</span><input id="setSize" type="range" min="80" max="160" step="5" value="100"></div>
+  </div>
+  <div class="pane" data-pane="sound">
+    <div class="row"><span>音色输出</span><select id="setOut" title="选择本机 MIDI 输出端口，用你的 VST / DAW / 硬件音源发声"><option value="">内置合成器</option></select></div>
+    <div class="row" id="rowSf2" style="display:none"><span>SF2 音色</span>
+      <span class="sf2Wrap">
+        <input type="text" id="sf2Search" placeholder="搜索…" title="按名称搜索音色">
+        <button id="sf2FavBtn" title="收藏/取消收藏当前音色">☆</button>
+        <select id="setSf2" title="只看收藏：先给音色点☆收藏"></select>
+      </span>
+    </div>
+    <div class="row"><span>音色混响</span><label class="sw"><input type="checkbox" id="setRev"><i></i></label></div>
+    <div class="row"><span>混响强度</span><select id="setRevAmt"><option value="small">轻</option><option value="mid">中</option><option value="big">大</option></select></div>
+  </div>
+  <div class="pane" data-pane="follow">
+    <div class="row"><span>跟弹流光</span><label class="sw"><input type="checkbox" id="setHint" checked><i></i></label></div>
+    <div class="row"><span>流光颜色</span><span id="setHintColors"></span></div>
+    <div class="row"><span>提前显示</span><input id="setHintLead" type="range" min="0.5" max="4" step="0.5" value="2"></div>
+    <div class="row"><span>跟弹难度</span><select id="setDiff"><option value="1">1 · 练习（±5 半音）</option><option value="2">2 · 简单（±4 半音）</option><option value="3">3 · 普通（±3 半音）</option><option value="4">4 · 严格（±2 半音）</option><option value="5">5 · 最难（精确）</option></select></div>
+    <div class="row"><span>评分结算</span><label class="sw"><input type="checkbox" id="setScores"><i></i></label></div>
+    <div class="row"><span>分段循环</span><label class="sw"><input type="checkbox" id="setLoop2"><i></i></label></div>
+    <div class="row"><span>左右手练习</span><select id="setHands"><option value="both">双手</option><option value="melody">只练旋律</option><option value="acc">只练伴奏</option></select></div>
+    <div class="hintline">分段循环打开后，曲目模式下会出现 A / B / 循环 按钮。<br>左右手分离依赖导入曲目的伴奏声部（内置曲目无此数据）。</div>
+  </div>
+  <div class="pane" data-pane="keys">
+    <div class="row"><span>电脑键盘弹奏</span><label class="sw"><input type="checkbox" id="setKb" checked><i></i></label></div>
+    <div class="row"><span>键盘八度</span><select id="setKbOct"><option value="-2">-2</option><option value="-1">-1</option><option value="0">0</option><option value="1">+1</option><option value="2">+2</option></select></div>
+    <div class="row"><span>力度曲线</span><select id="setVel"><option value="soft">轻触（容易弹响）</option><option value="std">标准</option><option value="hard">重锤（需要用力）</option></select></div>
+    <div class="row"><span>踏板指示</span><label class="sw"><input type="checkbox" id="setPedal"><i></i></label></div>
+    <div class="hintline">电脑键盘 A-K 键可弹奏（S/D/G/H/J 等为黑键）。力度曲线影响 MIDI 键盘与电脑键盘的响度手感。</div>
+  </div>
+  <div class="pane" data-pane="rec">
+    <div class="row"><span>录音与回放</span><label class="sw"><input type="checkbox" id="setRecOn"><i></i></label></div>
+    <div class="hintline">打开后底部出现「● 录音」按钮：录制你的弹奏（含踏板），支持回放与清除。<br>录音保存在内存中，关闭应用后消失。</div>
+  </div>
+  <div class="pane" data-pane="misc">
+    <div class="row"><span>诊断信息</span><button class="mini" id="bDiag">复制</button></div>
+    <div class="row"><span>恢复默认设置</span><button class="mini" id="bReset">重置</button></div>
+    <div class="row"><span>版本</span><span id="setVer" style="color:#94a3b8">v0.3.1</span></div>
+  </div>
+</div>
+<div id="resultPop"></div>
+<div id="recPop">
+  <div class="row"><span>录音</span><button id="bRecToggle">● 开始</button></div>
+  <div class="row"><span>回放</span><button id="bRecPlay">▶ 播放</button></div>
+  <div class="row"><span>清除</span><button id="bRecClear">■ 清除</button></div>
+  <div id="recInfo" style="color:#94a3b8;font-size:11.5px;padding-top:2px">暂无录音</div>
+</div>
+<div id="pedalLed">延音</div>
+<div id="vig"></div>
+<div id="noteLayer"></div>
+<div id="tips">
+  <div><b>拖拽</b> 旋转视角 · <b>滚轮</b> 缩放 · <b>点琴键</b> 试音 · 电脑键盘 <b>A-K</b> 也能弹</div>
+  <div>底部「<b>曲目</b>」五线谱/简谱/钢琴块 ·「<b>跟弹</b>」不限速度练习</div>
+  <div>「<b>设置</b>」按分类调：外观 / 音色 / 跟弹练习 / 键盘弹奏 / 录音 / 通用</div>
+  <button id="tipsOk">知道了</button>
+</div>
+<div id="tiles"></div>
+<div id="dot"></div>
+<div id="toast"></div>
+<div id="err"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="./src/createKeyboardModel.js?v=20260913b"></script>
+ <script src="./src/soundEngine.js?v=20260912b"></script>
+ <script src="./src/sf2Player.js?v=20260912b"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vexflow/3.0.9/vexflow-min.js"></script>
+<script src="./src/followPlay.js?v=20260912a"></script>
+<script>
+(function(){
+"use strict";
+function showErr(m){var e=document.getElementById('err');e.style.display='block';e.textContent=m;}
+if(!window.THREE){showErr('three.min.js 加载失败，请联网后刷新。');return;}
+if(!window.createKeyboardModel){showErr('建模工厂加载失败。');return;}
+console.log('FlowKeys build 20260913a');
+
+/* ---------- 渲染器 / 场景 / 相机 ---------- */
+var app=document.getElementById('app');
+var renderer;
+try{ renderer=new THREE.WebGLRenderer({antialias:true}); }
+catch(e){ showErr('WebGL 不可用：'+e.message); return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.0;
+app.appendChild(renderer.domElement);
+
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0x23272e);
+scene.fog=new THREE.Fog(0x23272e,55,110);
+
+var camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,0.1,300);
+var target=new THREE.Vector3(0,0.4,0);
+var sph={r:38,theta:0,phi:0.42};
+function applyCam(){
+  var p=Math.max(0.03,Math.min(1.55,sph.phi));
+  camera.position.set(
+    target.x+sph.r*Math.sin(p)*Math.sin(sph.theta),
+    target.y+sph.r*Math.cos(p),
+    target.z+sph.r*Math.sin(p)*Math.cos(sph.theta));
+  camera.lookAt(target);
+}
+var VIEWS={
+  play:  {r:34,theta:0,phi:0.40,t:[0,0.3,2.2]},
+  idle:  {r:38,theta:0.0,phi:0.42,t:[0,0.2,0]},
+  tiles: {r:40,theta:0,phi:0.05,t:[0,0.2,1.5]}
+};
+function setView(n,instant){var v=VIEWS[n];if(!v)return;
+  if(instant){sph.r=v.r;sph.theta=v.theta;sph.phi=v.phi;target.set(v.t[0],v.t[1],v.t[2]);applyCam();}
+  else{entrance.userTouched=true;camFlight={from:{r:sph.r,theta:sph.theta,phi:sph.phi,t:target.clone()},to:v,t:0};}
+}
+var camFlight=null;
+
+/* ---------- 轨道控制（拖拽旋转 + 滚轮缩放） ---------- */
+var dragging=0,lx=0,ly=0,moved=0;
+var dom=renderer.domElement; dom.style.touchAction='none';
+dom.addEventListener('pointerdown',function(e){
+  if(document.body.classList.contains('score-tiles')&&window.__tilesDown){window.__tilesDown(tilesAt(e));return;}
+  dragging=1;lx=e.clientX;ly=e.clientY;moved=0;camFlight=null;entrance.userTouched=true;
+  if(dom.setPointerCapture&&e.pointerId!==undefined){try{dom.setPointerCapture(e.pointerId);}catch(_){}}
+});
+dom.addEventListener('pointermove',function(e){
+  wakeDock();
+  if(!dragging)return;
+  var dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;moved+=Math.abs(dx)+Math.abs(dy);
+  sph.theta-=dx*0.006;sph.phi-=dy*0.005;sph.phi=Math.max(0.03,Math.min(1.55,sph.phi));
+  applyCam();
+});
+addEventListener('pointerup',function(e){
+  if(document.body.classList.contains('score-tiles')&&window.__tilesUp){dragging=0;window.__tilesUp();return;}
+  if(dragging&&moved<6&&e.target===dom) handleClick(e);
+  dragging=0;
+});
+dom.addEventListener('wheel',function(e){e.preventDefault();camFlight=null;sph.r*=(1+Math.sign(e.deltaY)*0.09);sph.r=Math.max(12,Math.min(70,sph.r));applyCam();},{passive:false});
+dom.addEventListener('contextmenu',function(e){e.preventDefault();});
+
+/* ---------- 灯光 ---------- */
+scene.add(new THREE.HemisphereLight(0xffffff,0x8a93a0,0.6));
+var key=new THREE.DirectionalLight(0xffffff,1.35);
+key.position.set(-14,22,10);key.castShadow=true;
+key.shadow.mapSize.set(2048,2048);
+key.shadow.camera.left=-22;key.shadow.camera.right=22;key.shadow.camera.top=22;key.shadow.camera.bottom=-22;
+key.shadow.bias=-0.0004;
+scene.add(key);
+var fill=new THREE.DirectionalLight(0xeef2ff,0.5);fill.position.set(18,8,12);scene.add(fill);
+var rim=new THREE.DirectionalLight(0xffffff,0.55);rim.position.set(6,10,-20);scene.add(rim);
+
+var ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),
+  new THREE.MeshBasicMaterial({color:0x23272e}));
+ground.rotation.x=-Math.PI/2;ground.position.y=-1.9;scene.add(ground);
+var catcher=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.ShadowMaterial({opacity:0.45}));
+catcher.rotation.x=-Math.PI/2;catcher.position.y=-1.85;catcher.receiveShadow=true;scene.add(catcher);
+
+/* ---------- 模型 ---------- */
+try{window.KEYBOARD_PARAMS=window.KEYBOARD_PARAMS||{};}catch(_){}
+var model=window.createKeyboardModel();
+var kb=model.group;
+scene.add(kb);
+var parts=model.parts, byId=model.byId;
+
+/* ---------- 进场动效：爆炸态 → 组装 ---------- */
+var entrance={t:0,dur:2.4,playing:true,userTouched:false,started:false};
+(function initEntrance(){
+  var kindOrder={body:0,rear:1,graphics:0.2,white:0,black:0,strip:0,display:0,pad:0,knob:0,button:0};
+  var counters={};
+  for(var i=0;i<parts.length;i++){
+    var p=parts[i];var k=p.kind;
+    var base;
+    if(k==='body')base=(p.id==='chassis'?0:(p.id==='deck'?0.12:0.2));
+    else if(k==='graphics')base=0.18;
+    else if(k==='rear')base=0.45;
+    else if(k==='white'){counters.white=(counters.white||0)+1;base=0.30+(p.assembled.x+16)/32*0.35;}
+    else if(k==='black'){counters.black=(counters.black||0)+1;base=0.55+(p.assembled.x+16)/32*0.30;}
+    else if(k==='strip')base=1.0+((counters.strip=(counters.strip||0)+1)-1)*0.06;
+    else if(k==='display')base=1.12;
+    else if(k==='pad')base=0.85+((counters.pad=(counters.pad||0)+1)-1)*0.035;
+    else if(k==='knob')base=1.0+((counters.knob=(counters.knob||0)+1)-1)*0.04;
+    else if(k==='button')base=1.15+((counters.button=(counters.button||0)+1)-1)*0.02;
+    else base=0.5;
+    p._land=base;
+  }
+  // 初始爆炸态
+  for(var j=0;j<parts.length;j++){var q=parts[j];
+    q.group.position.copy(q.assembled).addScaledVector(q.explodeDir,q.explodeDist);
+  }
+  // 相机起始：略远略高
+  sph.r=52;sph.theta=0.42;sph.phi=0.62;applyCam();
+})();
+function easeOutCubic(x){return 1-Math.pow(1-x,3);}
+function stepEntrance(dt){
+  if(!entrance.playing)return;
+  entrance.t+=dt;
+  var T=entrance.t;
+  for(var i=0;i<parts.length;i++){
+    var p=parts[i];
+    var k=Math.max(0,Math.min(1,(T-p._land)/0.85));
+    var e=easeOutCubic(k);
+    p.group.position.copy(p.assembled).addScaledVector(p.explodeDir,p.explodeDist*(1-e));
+  }
+  if(!entrance.userTouched){
+    var ct=Math.min(1,T/2.2),ce=easeOutCubic(ct);
+    sph.r=52+(38-52)*ce;
+    sph.theta=0.42+(0-0.42)*ce;
+    sph.phi=0.62+(0.42-0.62)*ce;
+    applyCam();
+  }
+  if(T>=entrance.dur){entrance.playing=false;}
+}
+
+/* ---------- 力度曲线 / 踏板指示 / 录音回放 ---------- */
+function velCurve(v){
+  v=Math.max(0,Math.min(1,v==null?0.85:v));
+  if(SET.velCurve==='soft')return Math.pow(v,0.6);
+  if(SET.velCurve==='hard')return Math.pow(v,1.7);
+  return v;
+}
+function pedalLed(on){
+  var el=document.getElementById('pedalLed');if(!el)return;
+  el.classList.toggle('on',!!SET.pedalLed);
+  el.classList.toggle('down',!!on);
+}
+var rec={events:[],recording:false,t0:0,playing:false,pt:0,raf:0};
+function recEvent(type,midi,val,dt){
+  if(!rec.recording||rec.playing)return;
+  rec.events.push({t:performance.now()/1000-rec.t0+(dt||0),type:type,midi:midi,val:val});
+  if(rec.events.length>20000)recStop();
+}
+function recStart(){
+  if(rec.playing)recPlayStop();
+  rec.events=[];rec.recording=true;rec.t0=performance.now()/1000;
+  updateRecUI();toast('开始录音');
+}
+function recStop(){
+  if(!rec.recording)return;
+  rec.recording=false;updateRecUI();
+  toast('录音结束 · '+recDur().toFixed(1)+' 秒');
+}
+function recDur(){
+  if(!rec.events.length)return 0;
+  var last=rec.events[rec.events.length-1];
+  return rec.recording?(performance.now()/1000-rec.t0):last.t;
+}
+function recPlayStop(){rec.playing=false;cancelAnimationFrame(rec.raf);updateRecUI();}
+function recPlay(){
+  if(rec.playing){recPlayStop();return;}
+  if(!rec.events.length){toast('还没有录音');return;}
+  if(rec.recording)recStop();
+  rec.playing=true;rec.pt=performance.now()/1000;
+  var i=0;updateRecUI();
+  (function step(){
+    if(!rec.playing)return;
+    var t=performance.now()/1000-rec.pt;
+    while(i<rec.events.length&&rec.events[i].t<=t){
+      var ev=rec.events[i++];
+      try{
+        if(ev.type==='on'){
+          if(ev.midi>=36&&ev.midi<44){var pd=model.pads[(ev.midi-36+4)%8];if(pd)pressPad(pd,ev.val);}
+          else{var pp=fitPart(ev.midi);if(window.SMK25Engine)window.SMK25Engine.noteOn(ev.midi,ev.val);if(pp){tweens.push({p:pp,t:0,kind:'key'});addHit(pp);}}
+        }else if(ev.type==='off'){
+          if(window.SMK25Engine)window.SMK25Engine.noteOff(ev.midi);
+          releaseHit(fitPart(ev.midi));
+        }else if(ev.type==='cc64'){
+          if(window.SMK25Engine)window.SMK25Engine.setSustain(ev.val>=64);
+          pedalLed(ev.val>=64);
+        }
+      }catch(_){}
+    }
+    if(i>=rec.events.length){rec.playing=false;updateRecUI();toast('回放结束');return;}
+    rec.raf=requestAnimationFrame(step);
+  })();
+}
+function recClear(){recPlayStop();rec.events=[];rec.recording=false;updateRecUI();}
+function recCount(){var n=0;for(var i=0;i<rec.events.length;i++)if(rec.events[i].type==='on')n++;return n;}
+function updateRecUI(){
+  var t=document.getElementById('bRecToggle');
+  if(t){t.textContent=rec.recording?'■ 停止':'● 开始';t.classList.toggle('rec-on',rec.recording);}
+  var pb=document.getElementById('bRecPlay');
+  if(pb)pb.textContent=rec.playing?'■ 停止回放':'▶ 播放';
+  var info=document.getElementById('recInfo');
+  if(info){
+    if(rec.recording)info.textContent='正在录音… '+(performance.now()/1000-rec.t0).toFixed(1)+' 秒';
+    else if(rec.events.length)info.textContent='时长约 '+recDur().toFixed(1)+' 秒 · '+recCount()+' 个音符'+(rec.playing?'（回放中）':'');
+    else info.textContent='暂无录音';
+  }
+  var db=document.getElementById('bRec');
+  if(db)db.classList.toggle('rec-on',rec.recording);
+}
+setInterval(function(){if(rec.recording)updateRecUI();},500);
+
+/* ---------- 按键试音 / 动效 ---------- */
+var tweens=[];
+function playKey(p,vel,soundMidi){
+  var m=(soundMidi!=null?soundMidi:(p&&p.midi));
+  var v=velCurve(vel==null?0.85:vel);
+  if(window.SMK25Engine)window.SMK25Engine.noteOn(m,v);
+  tweens.push({p:p,t:0,kind:'key'});
+  addHit(p);
+  recEvent('on',m,v);
+}
+function keyRelease(p,soundMidi){
+  var m=(soundMidi!=null?soundMidi:(p&&p.midi));
+  if(window.SMK25Engine)window.SMK25Engine.noteOff(m);
+  releaseHit(p);
+  recEvent('off',m,0);
+}
+function pressPad(p,vel){
+  var v=velCurve(vel==null?0.9:vel);
+  if(window.SMK25Engine)window.SMK25Engine.drum(p.padIndex,v);
+  p.lensMat.emissiveIntensity=2.2;
+  tweens.push({p:p,t:0,kind:'pad'});
+  var m=36+((p.padIndex+4)%8);
+  recEvent('on',m,v);recEvent('off',m,0,0.35);
+}
+function turnKnob(p){p.spin.rotation.y+=Math.PI/6;if(window.SMK25Engine)window.SMK25Engine.blip(300+p.knobIndex*30);}
+function stepTweens(dt){
+  for(var i=tweens.length-1;i>=0;i--){var tw=tweens[i];tw.t+=dt*3.2;
+    var k=tw.t<0.35?tw.t/0.35:(1-Math.min(1,(tw.t-0.35)/0.65));
+    if(tw.kind==='key'){tw.p.group.rotation.x=-0.035*k;}
+    else if(tw.kind==='pad'){tw.p.group.scale.y=1-0.18*k;}
+    if(tw.t>=1){
+      if(tw.kind==='key')tw.p.group.rotation.x=0;
+      if(tw.kind==='pad'){tw.p.group.scale.y=1;tw.p.lensMat.emissiveIntensity=tw.p.baseEmissive;}
+      tweens.splice(i,1);
+    }
+  }
+}
+
+/* ---------- 点击试音 ---------- */
+var ray=new THREE.Raycaster(),ptr=new THREE.Vector2();
+function findPart(o){while(o){if(o.userData&&o.userData.partId)return o.userData.part; o=o.parent;}return null;}
+function tilesAt(e){
+  var r=dom.getBoundingClientRect();
+  ptr.x=((e.clientX-r.left)/r.width)*2-1;ptr.y=-((e.clientY-r.top)/r.height)*2+1;
+  ray.setFromCamera(ptr,camera);
+  var hits=ray.intersectObjects(kb.children,true);
+  for(var i=0;i<hits.length;i++){
+    var p=findPart(hits[i].object);
+    if(!p||!p.group.visible)continue;
+    if(p.kind==='white'||p.kind==='black')return p;
+  }
+  return null;
+}
+function handleClick(e){
+  if(document.body.classList.contains('score-tiles'))return;
+  var r=dom.getBoundingClientRect();
+  ptr.x=((e.clientX-r.left)/r.width)*2-1;ptr.y=-((e.clientY-r.top)/r.height)*2+1;
+  ray.setFromCamera(ptr,camera);
+  var hits=ray.intersectObjects(kb.children,true);
+  for(var i=0;i<hits.length;i++){
+    var p=findPart(hits[i].object);
+    if(!p||!p.group.visible)continue;
+    if(p.kind==='white'||p.kind==='black'){var n2=snapUse(p.midi),pp=(n2!==p.midi)?(fitPart(n2)||p):p;playKey(pp);if(window.__followScore)window.__followScore(n2);setTimeout(function(q){return function(){keyRelease(q);};}(pp),800);}
+    else if(p.kind==='pad')pressPad(p);
+    else if(p.kind==='knob')turnKnob(p);
+    else if(window.SMK25Engine)window.SMK25Engine.blip(520);
+    return;
+  }
+}
+
+/* ---------- 电脑键盘 A-K ---------- */
+var KEYMAP={a:0,w:1,s:2,e:3,d:4,f:5,t:6,g:7,y:8,h:9,u:10,j:11,k:12,o:13,l:14};
+var keySnap={},keyDownIdx={};
+function whiteSeq(){return model.whiteKeys.slice().sort(function(a,b){return a.keyIndex-b.keyIndex;});}
+function kbTyping(e){var t=e.target;return t&&(t.tagName==='INPUT'||t.tagName==='SELECT'||t.tagName==='TEXTAREA');}
+addEventListener('keydown',function(e){
+  if(e.repeat)return;var k=(e.key||'').toLowerCase();
+  if(!(k in KEYMAP))return;
+  if(!SET.kbPlay||kbTyping(e))return;
+  var seq=whiteSeq();var idx=KEYMAP[k]+(SET.kbOct||0)*7;if(idx<0||idx>=seq.length)return;
+  var n2=snapUse(seq[idx].midi);keySnap[k]=n2;keyDownIdx[k]=idx;
+  playKey(seq[idx],0.9);
+  if(window.__followScore)window.__followScore(n2);
+});
+addEventListener('keyup',function(e){
+  var k=(e.key||'').toLowerCase();if(!(k in KEYMAP))return;
+  var seq=whiteSeq();var idx=(keyDownIdx[k]!=null)?keyDownIdx[k]:(KEYMAP[k]+(SET.kbOct||0)*7);delete keyDownIdx[k];
+  if(idx<0||idx>=seq.length)return;
+  var n2=keySnap[k];delete keySnap[k];
+  if(n2!=null&&n2!==seq[idx].midi)keyRelease(seq[idx],n2);else keyRelease(seq[idx]);
+});
+
+/* ---------- MIDI 自动连接 ---------- */
+var midiAcc=null,midiIn=null,started=false;
+var splash=$id('splash'),splashText=$id('splashText'),splashBtn=$id('splashBtn');
+function $id(id){return document.getElementById(id);}
+function dotOn(on){$id('dot').classList.toggle('on',!!on);}
+var toastTimer=0;
+var __errlog=[];
+addEventListener('error',function(e){try{if(__errlog.length>19)__errlog.shift();__errlog.push(new Date().toTimeString().slice(0,8)+' '+(e.message||e.type||'error'));}catch(_){}});
+addEventListener('unhandledrejection',function(e){try{if(__errlog.length>19)__errlog.shift();var r=e.reason;__errlog.push(new Date().toTimeString().slice(0,8)+' '+(r&&r.message||r||'promise'));}catch(_){}});
+function toast(t){
+  var el=$id('toast');el.textContent=t;el.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.classList.remove('show');},1800);
+}
+function setSplash(text,btn){
+  splash.classList.add('show');splashText.textContent=text;
+  if(btn){splashBtn.style.display='';splashBtn.textContent=btn;}else{splashBtn.style.display='none';}
+}
+function enterPlay(){
+  started=true;
+  splash.classList.remove('show');
+  if(window.SMK25Engine)window.SMK25Engine.unlock();
+  if(window.__sf2&&window.__sf2.unlock)window.__sf2.unlock();
+  showTips();
+}
+splashBtn.onclick=function(){enterPlay();};
+/* ---------- 首次引导提示 ---------- */
+var tipsTimer=0;
+function showTips(){
+  try{if(localStorage.getItem('smk25tut')==='1')return;}catch(_){}
+  var el=document.getElementById('tips');
+  if(!el)return;
+  el.classList.add('show');
+  tipsTimer=setTimeout(hideTips,9000);
+}
+function hideTips(){
+  var el=document.getElementById('tips');
+  if(el)el.classList.remove('show');
+  clearTimeout(tipsTimer);
+  try{localStorage.setItem('smk25tut','1');}catch(_){}
+}
+document.getElementById('tipsOk').onclick=hideTips;
+
+function bindBest(auto){
+  if(!midiAcc)return;
+  var list=[];midiAcc.inputs.forEach(function(i){list.push(i);});
+  if(!list.length){dotOn(false);if(!started)setSplash('未检测到 MIDI 键盘 · 用鼠标弹奏','开始弹奏');return;}
+  var pick=null;
+  for(var i=0;i<list.length;i++){if(/keyboard|piano|m-vave|smk|usb|midi/i.test(list[i].name||'')){pick=list[i];break;}}
+  if(!pick)pick=list[0];
+  if(midiIn)midiIn.onmidimessage=null;
+  midiIn=pick;midiIn.onmidimessage=onMIDI;
+  dotOn(true);
+  if(!started)setSplash('已检测到 '+(pick.name||'MIDI 键盘'),'开始弹奏');
+  else toast('已连接 '+(pick.name||'MIDI 键盘'));
+}
+function onMIDI(ev){
+  var d=ev.data,st=d[0],cmd=st&0xF0;
+  if(cmd===0x90&&d[2]>0)midiNoteOn(d[1],d[2]/127);
+  else if(cmd===0x80||(cmd===0x90&&d[2]===0))midiNoteOff(d[1]);
+  else if(cmd===0xB0)midiCC(d[1],d[2]);
+}
+/* ---------- MIDI 输出：用外部 VST / 硬件音源发声 ---------- */
+function listOuts(){
+  var a=[];
+  if(midiAcc)midiAcc.outputs.forEach(function(o){a.push({id:o.id,name:o.name||o.id});});
+  return a;
+}
+function getOut(){
+  if(!midiAcc)return null;
+  var key=SET.outport;if(!key)return null;
+  var f=null;
+  midiAcc.outputs.forEach(function(o){if(!f&&(o.id===key||o.name===key))f=o;});
+  return f;
+}
+window.__midiOuts=listOuts;
+/* ---------- SoundFont 本地音色 ---------- */
+var sf2FileIn=null;
+var SF2_BANKS=[{file:'GeneralUserGS.sf2',label:'GeneralUser GS · GM 全能（200+ 音色）'}];
+function sf2Ready(){return !!(window.__sf2&&window.__sf2.presets&&window.__sf2.presets.length);}
+function refreshOutSel(){
+  var sel=document.getElementById('setOut');if(!sel)return;
+  var cur=SET.outport||'';
+  sel.innerHTML='';
+  var o0=document.createElement('option');o0.value='';o0.textContent='内置合成器';sel.appendChild(o0);
+  SF2_BANKS.forEach(function(b){
+    var ob=document.createElement('option');ob.value='__sf2b:'+b.file;ob.textContent='音色包 · '+b.label;sel.appendChild(ob);
+  });
+  if(sf2Ready()&&window.__sf2src==='__sf2'){
+    var os=document.createElement('option');os.value='__sf2';
+    os.textContent='SoundFont：'+String(window.__sf2.name||'').slice(0,18);sel.appendChild(os);
+  }
+  var ol=document.createElement('option');ol.value='__sf2load';ol.textContent='＋ 加载 SoundFont (.sf2)…';sel.appendChild(ol);
+  listOuts().forEach(function(p){
+    var o=document.createElement('option');o.value=p.id;o.textContent='MIDI: '+p.name;sel.appendChild(o);
+  });
+  var has=false;
+  for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===cur)has=true;}
+  sel.value=has?cur:((sf2Ready()&&window.__sf2src==='__sf2')?'__sf2':'');
+  var row=document.getElementById('rowSf2');
+  var v0=sel.value;
+  if(row)row.style.display=(sf2Ready()&&(v0==='__sf2'||v0.indexOf('__sf2b:')===0))?'':'none';
+}
+function sf2Order(){
+  var n=window.__sf2.presets.length,arr=[];
+  for(var i=0;i<n;i++)arr.push(i);
+  arr.sort(function(a,b){var A=window.__sf2.presets[a],B=window.__sf2.presets[b];return (A.bank-B.bank)||(A.preset-B.preset);});
+  window.__sf2order=arr;return arr;
+}
+function sf2DefaultPos(){
+  var P=window.__sf2.presets,o=window.__sf2order||sf2Order();
+  for(var i=0;i<o.length;i++){var p=P[o[i]];if(p.bank===0&&p.preset===0)return i;}
+  return 0;
+}
+function sf2FavList(){return Array.isArray(SET.sf2fav)?SET.sf2fav:[];}
+function sf2Keyof(orig){var pr=window.__sf2&&window.__sf2.presets[orig];return pr?(pr.bank+':'+pr.preset+':'+pr.name):'';}
+function populateSf2Presets(){
+  var sel=document.getElementById('setSf2');if(!sel)return;
+  sel.innerHTML='';
+  if(!sf2Ready())return;
+  var fresh=false;
+  if(SET.sf2preset==null||typeof SET.sf2preset!=='number'){SET.sf2preset=sf2DefaultPos();saveSET();fresh=true;}
+  var o=sf2Order();
+  var sea=document.getElementById('sf2Search');
+  var q=(sea?sea.value:'').toLowerCase().trim();
+  var favs=[],others=[];
+  o.forEach(function(orig,pos){
+    var pr=window.__sf2.presets[orig];
+    var key=sf2Keyof(orig);
+    if(q&&pr.name.toLowerCase().indexOf(q)<0&&key.toLowerCase().indexOf(q)<0)return;
+    (sf2FavList().indexOf(key)>=0?favs:others).push({orig:orig,pos:pos,pr:pr});
+  });
+  function fill(group,arr){
+    if(!arr.length)return;
+    var og=document.createElement('optgroup');og.label=group;
+    arr.forEach(function(it){
+      var opt=document.createElement('option');opt.value=String(it.pos);
+      opt.textContent=(it.pr.bank>=128?'〔鼓组〕':'')+it.pr.name;og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  }
+  fill('★ 收藏',favs);
+  fill(q?'搜索结果':'全部音色',others);
+  var found=false;
+  for(var i=0;i<sel.options.length;i++){if(parseInt(sel.options[i].value,10)===SET.sf2preset){found=true;break;}}
+  if(found)sel.value=String(SET.sf2preset);
+  else if(sel.options.length)sel.value=sel.options[0].value;
+  if((fresh||found)&&sel.value!==''){window.__sf2.setPreset(window.__sf2order[parseInt(sel.value,10)]);}
+  if(window.__sf2RefreshFav)window.__sf2RefreshFav();
+}
+window.__smk25refreshOut=refreshOutSel;
+function mountSf2(buf,label,src){
+  try{
+    var p=window.__sf2||(window.__sf2=new window.SF2Player());
+    var same=(window.__sf2src===src);
+    if(!same)SET.sf2preset=null;
+    var info=p.load(buf,label);
+    var vol=document.getElementById('vol');
+    p.setVolume(((parseInt(vol&&vol.value,10))||80)/100);
+    if(p.unlock)p.unlock();
+    window.__sf2src=src;
+    SET.outport=src;SET.sf2name=label;saveSET();
+    populateSf2Presets();
+    if(window.__applyRev)window.__applyRev();
+    refreshOutSel();
+    if(window.__ui)window.__ui.toast('已加载音色包：'+label+'（'+info.presets.length+' 个音色）');
+    return true;
+  }catch(e){
+    if(window.__ui)window.__ui.toast('SF2 解析失败：'+((e&&e.message)||e));
+    return false;
+  }
+}
+function loadSf2File(f){
+  if(!f)return;
+  var fr=new FileReader();
+  fr.onload=function(){
+    mountSf2(fr.result,f.name,'__sf2');
+    if(sf2FileIn)sf2FileIn.value='';
+  };
+  fr.readAsArrayBuffer(f);
+}
+function loadSf2Bundled(bank){
+  if(window.__sf2src==='__sf2b:'+bank.file&&sf2Ready()){
+    SET.outport=window.__sf2src;saveSET();
+    populateSf2Presets();refreshOutSel();return;
+  }
+  if(window.__ui)window.__ui.toast('正在加载 '+bank.label+' …');
+  fetch('./sounds/'+bank.file).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.arrayBuffer();
+  }).then(function(b){
+    mountSf2(b,bank.label,'__sf2b:'+bank.file);
+  }).catch(function(e){
+    if(window.__ui)window.__ui.toast('音色包加载失败：'+((e&&e.message)||e));
+  });
+}
+(function initSf2Input(){
+  var i=document.createElement('input');
+  i.type='file';i.accept='.sf2';i.style.display='none';
+  i.addEventListener('change',function(){loadSf2File(i.files[0]);});
+  document.body.appendChild(i);sf2FileIn=i;
+})();
+(function applyOutRoute(){
+  var E=window.SMK25Engine;if(!E||E._routed)return;
+  E._routed=1;
+  var o={noteOn:E.noteOn,noteOff:E.noteOff,drum:E.drum,blip:E.blip,setSustain:E.setSustain};
+  function clamp7(x){x=Math.round(x);return Math.max(1,Math.min(127,x));}
+  function send(m){var out=getOut();if(out){try{out.send(m);}catch(_){}}}
+  function sf2On(){return sf2Ready()&&(SET.outport==='__sf2'||SET.outport.indexOf('__sf2b:')===0);}
+  E.noteOn=function(m,v){
+    if(sf2On()){try{window.__sf2.noteOn(m,v==null?0.85:v);}catch(_){}return;}
+    if(getOut())send([0x90,Math.max(0,Math.min(127,m|0)),clamp7((v==null?0.85:v)*127)]);
+    else o.noteOn(m,v);
+  };
+  E.noteOff=function(m){
+    if(sf2On()){try{window.__sf2.noteOff(m);}catch(_){}return;}
+    if(getOut())send([0x80,Math.max(0,Math.min(127,m|0)),0]);
+    else o.noteOff(m);
+  };
+  E.drum=function(i,v){
+    if(sf2On()){try{window.__sf2.drum(i,v==null?0.9:v);}catch(_){}return;}
+    if(getOut())send([0x99,Math.max(0,Math.min(127,36+(i|0))),clamp7((v==null?0.9:v)*127)]);
+    else o.drum(i,v);
+  };
+  E.blip=function(f){if(!sf2On()&&!getOut())o.blip(f);};
+  E.setSustain=function(on){
+    if(sf2On()){try{window.__sf2.setSustain(on);}catch(_){}return;}
+    if(getOut())send([0xB0,64,on?127:0]);
+    else o.setSustain(on);
+  };
+})();
+function fitPart(midi){
+  var map={};
+  model.whiteKeys.concat(model.blackKeys).forEach(function(p){map[p.midi]=p;});
+  var n=midi;
+  if(map[n]!==undefined)return map[n];
+  while(n<48)n+=12;
+  while(n>72)n-=12;
+  return map[n]||null;
+}
+var snapHeld={};
+function snapUse(n){
+  var sn=(window.__followSnap)?window.__followSnap(n):null;
+  return (sn&&sn.on&&sn.midi!=null)?sn.midi:n;
+}
+function midiNoteOn(n,v){
+  if(n>=36&&n<44){var pd=model.pads[(n-36+4)%8];if(pd)pressPad(pd,v);return;}
+  var n2=snapUse(n);snapHeld[n]=n2;
+  var p=fitPart(n2);
+  if(!p)return;
+  var vv=velCurve(v);
+  if(window.SMK25Engine)window.SMK25Engine.noteOn(n2,vv);
+  tweens.push({p:p,t:0,kind:'key'});
+  addHit(p);
+  recEvent('on',n2,vv);
+  if(window.__followScore)window.__followScore(n2);
+}
+function midiNoteOff(n){
+  var n2=snapHeld[n];delete snapHeld[n];if(n2==null)n2=n;
+  if(window.SMK25Engine)window.SMK25Engine.noteOff(n2);
+  releaseHit(fitPart(n2));
+  recEvent('off',n2,0);
+}
+var ccMap={};
+function midiCC(cc,val){
+  if(cc===64){if(window.SMK25Engine)window.SMK25Engine.setSustain(val>=64);pedalLed(val>=64);recEvent('cc64',64,val);return;}
+  if(cc===1)return;
+  if(!(cc in ccMap)){
+    var keys=Object.keys(ccMap);if(keys.length>=8)return;
+    ccMap[cc]=keys.length;
+  }
+  var kb=model.knobs[ccMap[cc]];
+  if(kb)kb.spin.rotation.y=-2.3+(val/127)*4.6;
+}
+(function scanMIDI(){
+  setSplash('正在扫描 MIDI 键盘…');
+  if(!navigator.requestMIDIAccess){
+    setSplash('此环境不支持 MIDI · 用鼠标弹奏','开始弹奏');return;
+  }
+  navigator.requestMIDIAccess().then(function(acc){
+    midiAcc=acc;acc.onstatechange=function(){bindBest();refreshOutSel();};
+    bindBest();refreshOutSel();
+  },function(){
+    setSplash('未检测到 MIDI 键盘 · 用鼠标弹奏','开始弹奏');
+    // 部分环境（WebView2）要求用户手势后才允许 MIDI，首次点击时静默重试
+    var retry=function(){
+      if(midiAcc)return;
+      navigator.requestMIDIAccess().then(function(acc){
+        midiAcc=acc;acc.onstatechange=function(){bindBest();refreshOutSel();};
+        bindBest();
+      },function(){});
+    };
+    addEventListener('pointerdown',retry,{once:true});
+  });
+})();
+
+/* ---------- 底部胶囊交互 ---------- */
+var dock=$id('dock'),dockIdle=$id('dockIdle'),dockSong=$id('dockSong'),songPop=$id('songPop'),dockPractice=$id('dockPractice');
+var dockTimer=0;
+function wakeDock(){dock.classList.remove('dim');clearTimeout(dockTimer);dockTimer=setTimeout(function(){dock.classList.add('dim');},3000);}
+document.addEventListener('mousemove',wakeDock);
+wakeDock();
+// 曲目弹层
+$id('bSongs').onclick=function(e){e.stopPropagation();songPop.classList.toggle('show');};
+document.addEventListener('click',function(e){if(!songPop.contains(e.target))songPop.classList.remove('show');});
+// 音色
+(function initTimbre(){
+  var sel=$id('timbre');
+  var list=(window.SMK25Engine&&window.SMK25Engine.timbreList)||[];
+  var saved=null;try{saved=localStorage.getItem('smk25timbre');}catch(_){}
+  var cur=saved&&list.some(function(t){return t.id===saved;})?saved:(list[0]&&list[0].id);
+  list.forEach(function(t){
+    var o=document.createElement('option');o.value=t.id;o.textContent=t.label;
+    if(t.id===cur)o.selected=true;
+    sel.appendChild(o);
+  });
+  if(window.SMK25Engine)window.SMK25Engine.setTimbre(cur);
+  sel.onchange=function(){if(window.SMK25Engine)window.SMK25Engine.setTimbre(sel.value);try{localStorage.setItem('smk25timbre',sel.value);}catch(_){}};
+})();
+// 音量
+(function initVol(){
+  var v=80;try{v=parseInt(localStorage.getItem('smk25vol')||'80',10);}catch(_){}
+  if(isNaN(v))v=80;
+  var el=$id('vol');el.value=v;
+  if(window.SMK25Engine)window.SMK25Engine.setVolume(v/100);
+  if(window.__sf2)window.__sf2.setVolume(v/100);
+  el.oninput=function(){
+    if(window.SMK25Engine)window.SMK25Engine.setVolume(el.value/100);
+    if(window.__sf2)window.__sf2.setVolume(el.value/100);
+    try{localStorage.setItem('smk25vol',el.value);}catch(_){}
+  };
+})();
+
+/* ---------- 按键高亮 + 音名提示（可在「设置」DIY） ---------- */
+var NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+var SOLFA_NAMES=['do','do#','re','re#','mi','fa','fa#','sol','sol#','la','la#','si'];
+var JP_NAMES=['1','#1','2','#2','3','4','#4','5','#5','6','#6','7'];
+var SET={hl:true,color:'#22d3ee',notes:true,mode:'name',size:100,hint:true,hintColor:'#fbbf24',hintLead:2,diff:5,bg:'deep',outport:'',sf2preset:0,
+scores:false,loopAB:false,hands:'both',reverb:false,revAmt:'mid',pedalLed:false,velCurve:'std',kbPlay:true,kbOct:0,recOn:false,sf2fav:[]};
+try{var _stored=JSON.parse(localStorage.getItem('smk25set')||'{}');for(var _sk in SET){if(_stored[_sk]!==undefined)SET[_sk]=_stored[_sk];}}catch(_){}
+function saveSET(){try{localStorage.setItem('smk25set',JSON.stringify(SET));}catch(_){}}
+/* ---------- 背景主题 ---------- */
+var BG_THEMES={
+  deep:{top:'#0d1126',bottom:'#242c52',stars:1,vig:'radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 36%, rgba(4,7,16,.62) 100%)',fog:0x151a33},
+  warm:{top:'#1e1210',bottom:'#3b2118',stars:0,vig:'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 34%, rgba(22,9,4,.6) 100%)',fog:0x2a1812},
+  mist:{top:'#e9eff5',bottom:'#b6c3d2',stars:0,vig:'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 40%, rgba(70,86,105,.35) 100%)',fog:0xc5d0db},
+  classic:{flat:0x23272e,vig:null,fog:0x23272e}
+};
+function applyBg(){
+  var t=BG_THEMES[SET.bg]||BG_THEMES.deep;
+  var vig=document.getElementById('vig');
+  if(t.flat!=null){
+    scene.background=new THREE.Color(t.flat);
+    if(vig)vig.style.display='none';
+  }else{
+    var cv=document.createElement('canvas');cv.width=1024;cv.height=1024;
+    var cx=cv.getContext('2d');
+    var g=cx.createLinearGradient(0,0,0,1024);
+    g.addColorStop(0,t.top);g.addColorStop(1,t.bottom);
+    cx.fillStyle=g;cx.fillRect(0,0,1024,1024);
+    if(t.stars){
+      for(var i=0;i<170;i++){
+        var x=Math.random()*1024,y=Math.random()*680,r=Math.random()*1.6+0.3,a=Math.random()*0.5+0.15;
+        cx.fillStyle='rgba(200,220,255,'+a.toFixed(2)+')';
+        cx.beginPath();cx.arc(x,y,r,0,6.283);cx.fill();
+      }
+    }
+    var tex=new THREE.CanvasTexture(cv);tex.encoding=THREE.sRGBEncoding;
+    scene.background=tex;
+    if(vig){vig.style.display='block';vig.style.background=t.vig;}
+  }
+  if(scene.fog)scene.fog.color.setHex(t.fog);
+}
+applyBg();
+function noteText(m){
+  var pc=((m%12)+12)%12,oct=Math.floor(m/12)-1,i;
+  if(SET.mode==='midi')return 'MIDI '+m;
+  if(SET.mode==='solfa')return SOLFA_NAMES[pc]+oct;
+  if(SET.mode==='jianpu'){
+    var s=JP_NAMES[pc];
+    if(oct>4){for(i=0;i<oct-4;i++)s+='+';}
+    else if(oct<4){for(i=0;i<4-oct;i++)s+='-';}
+    return s;
+  }
+  return NOTE_NAMES[pc]+oct;
+}
+function hlMat(p){
+  if(p._hlMat===undefined){
+    p._hlMat=null;
+    p.group.traverse(function(o){if(!p._hlMat&&o.isMesh&&o.material&&o.material.isMeshStandardMaterial){o.material=o.material.clone();p._hlMat=o.material;}});
+    if(p._hlMat){p._hlBase=p._hlMat.color.clone();p._hlMat.emissive=new THREE.Color(0x000000);p._hlMat.emissiveIntensity=0;}
+  }
+  return p._hlMat;
+}
+var noteLayer=null,activeHits=[];
+var _bx=new THREE.Box3(),_v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_sz=new THREE.Vector3(),_hlCol=new THREE.Color(),_hsl={h:0,s:0,l:0};
+function addHit(p){
+  if(!p||!p.group)return;
+  var h=null;for(var i=0;i<activeHits.length;i++){if(activeHits[i].p===p){h=activeHits[i];break;}}
+  if(!h){
+    h={p:p,el:null,until:0};
+    if(SET.hl)hlMat(p);
+    if(SET.notes){
+      h.el=document.createElement('div');h.el.className='noteLbl';
+      if(!noteLayer)noteLayer=document.getElementById('noteLayer');
+      noteLayer.appendChild(h.el);
+    }
+    activeHits.push(h);
+  }
+  h.until=performance.now()/1000+1.7;
+  if(h.el){
+    h.el.textContent=noteText(p.midi);
+    h.el.style.fontSize=Math.round(13*SET.size/100)+'px';
+    h.el.style.borderColor=SET.color;
+  }
+}
+function releaseHit(p){
+  if(!p)return;var now=performance.now()/1000;
+  for(var i=0;i<activeHits.length;i++){var h=activeHits[i];if(h.p===p&&h.until>now+0.07)h.until=now+0.07;}
+}
+function dropHit(h){
+  if(h.p._hlMat){h.p._hlMat.emissiveIntensity=0;h.p._hlMat.color.copy(h.p._hlBase);}
+  if(h.el&&h.el.parentNode)h.el.parentNode.removeChild(h.el);
+}
+function stepHits(){
+  var now=performance.now()/1000;
+  for(var i=activeHits.length-1;i>=0;i--){
+    var h=activeHits[i];
+    var a=now<h.until?1:Math.max(0,1-(now-h.until)/0.45);
+    if(a<=0){dropHit(h);activeHits.splice(i,1);continue;}
+    _bx.setFromObject(h.p.group);
+    if(SET.hl){
+      var hm=h.p._hlMat||hlMat(h.p);
+      if(hm){
+        _hlCol.set(SET.color);_hlCol.getHSL(_hsl);
+        var _s2=_hsl.s<0.05?0:_hsl.s;
+        hm.color.copy(h.p._hlBase).lerp(_hlCol.setHSL(_hsl.h,_s2,0.06),0.98*a);
+        hm.emissive.set(SET.color);
+        hm.emissiveIntensity=0.75*a;
+      }
+    }else if(h.p._hlMat){h.p._hlMat.emissiveIntensity=0;h.p._hlMat.color.copy(h.p._hlBase);}
+    if(h.el&&SET.notes){
+      _v2.set((_bx.min.x+_bx.max.x)/2,_bx.max.y+0.22,(_bx.min.z+_bx.max.z)/2).project(camera);
+      var on=_v2.z<1&&a>0.03;
+      h.el.style.display=on?'':'none';
+      if(on){h.el.style.left=((_v2.x*0.5+0.5)*innerWidth)+'px';h.el.style.top=((-_v2.y*0.5+0.5)*innerHeight)+'px';h.el.style.opacity=a.toFixed(2);}
+    }
+  }
+}
+function applySET(){
+  for(var i=0;i<activeHits.length;i++){
+    var h=activeHits[i];
+    if(h.el){h.el.textContent=noteText(h.p.midi);h.el.style.fontSize=Math.round(13*SET.size/100)+'px';h.el.style.borderColor=SET.color;}
+    if(h.p._hlMat){if(SET.hl)h.p._hlMat.emissive.set(SET.color);else{h.p._hlMat.emissiveIntensity=0;h.p._hlMat.color.copy(h.p._hlBase);}}
+    if(h.el)h.el.style.display=SET.notes?'':'none';
+  }
+  if(hint.mat)hint.mat.color.set(SET.hintColor);
+  var lsa=document.getElementById('bSA'),lsb=document.getElementById('bSB'),lsl=document.getElementById('bSLoop');
+  if(lsa)lsa.style.display=SET.loopAB?'':'none';
+  if(lsb)lsb.style.display=SET.loopAB?'':'none';
+  if(lsl)lsl.style.display=SET.loopAB?'':'none';
+  var pl=document.getElementById('pedalLed');
+  if(pl){if(SET.pedalLed)pl.classList.add('on');else pl.classList.remove('on','down');}
+  var rb=document.getElementById('bRec'),rsep=document.getElementById('recSep');
+  if(rb)rb.style.display=SET.recOn?'':'none';
+  if(rsep)rsep.style.display=SET.recOn?'':'none';
+}
+/* ---------- 诊断信息 ---------- */
+function buildDiag(){
+  var lines=[];
+  lines.push('流光钢琴 诊断信息 · '+new Date().toLocaleString());
+  lines.push('版本: v0.3.1'+(window.__TAURI__?' (桌面版)':' (网页版)'));
+  lines.push('WebView: '+String(navigator.userAgent||'').slice(0,130));
+  var ins=[],outs=[];
+  if(midiAcc){midiAcc.inputs.forEach(function(i){ins.push(i.name||i.id);});midiAcc.outputs.forEach(function(o){outs.push(o.name||o.id);});}
+  lines.push('MIDI 输入: '+(ins.join(' / ')||'无'));
+  lines.push('MIDI 输出: '+(outs.join(' / ')||'无'));
+  lines.push('音色输出: '+(SET.outport||'内置合成器'));
+  lines.push('SF2: '+((window.__sf2&&window.__sf2.presets.length)?(window.__sf2.name+' · '+window.__sf2.presets.length+' 音色'):'未加载'));
+  lines.push('设置: '+JSON.stringify(SET));
+  lines.push('最近错误:');
+  if(!__errlog.length)lines.push(' 无');
+  else for(var i=0;i<__errlog.length;i++)lines.push(' '+__errlog[i]);
+  return lines.join('\n');
+}
+function copyDiag(){
+  var text=buildDiag();
+  function fallback(){
+    var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');}catch(_){}
+    document.body.removeChild(ta);toast('诊断信息已复制');
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){toast('诊断信息已复制');},fallback);}
+  else fallback();
+}
+/* ---------- 跟弹流光提示（下一个要按的键 · 环绕光带） ---------- */
+var hint={group:null,mesh:null,geo:null,tex:null,mat:null,part:null,_box:new THREE.Box3(),_ft:0};
+function hintTexture(){
+  var cv=document.createElement('canvas');cv.width=256;cv.height=32;
+  var cx=cv.getContext('2d');
+  for(var x=0;x<256;x++){
+    var wave=Math.pow(0.5+0.5*Math.sin(x/256*Math.PI*2),10);
+    var a=0.16+0.84*wave;
+    for(var y=0;y<32;y++){
+      var edge=Math.sin((y+0.5)/32*Math.PI);
+      cx.fillStyle='rgba(255,255,255,'+(a*edge).toFixed(3)+')';
+      cx.fillRect(x,y,1,1);
+    }
+  }
+  var t=new THREE.CanvasTexture(cv);
+  t.wrapS=THREE.RepeatWrapping;t.wrapT=THREE.ClampToEdgeWrapping;
+  return t;
+}
+function ensureHint(){
+  if(hint.group)return;
+  hint.tex=hintTexture();
+  hint.mat=new THREE.MeshBasicMaterial({map:hint.tex,color:new THREE.Color(SET.hintColor),transparent:true,depthWrite:false,toneMapped:false,side:THREE.DoubleSide});
+  hint.group=new THREE.Group();hint.group.visible=false;scene.add(hint.group);
+  hint.mesh=new THREE.Mesh(new THREE.BufferGeometry(),hint.mat);
+  hint.mesh.renderOrder=998;hint.group.add(hint.mesh);
+}
+function buildHintFrame(p){
+  var b=hint._box.setFromObject(p.group);
+  var y=b.max.y+0.05,off=0.07;
+  var x0=b.min.x,x1=b.max.x,z0=b.min.z,z1=b.max.z;
+  var O=[[x0-off,z0-off],[x1+off,z0-off],[x1+off,z1+off],[x0-off,z1+off]];
+  var I=[[x0+off,z0+off],[x1-off,z0+off],[x1-off,z1-off],[x0+off,z1-off]];
+  var wood=[0,0,0,0],total=0;
+  for(var i=0;i<4;i++){
+    var j=(i+1)%4,dx=O[j][0]-O[i][0],dz=O[j][1]-O[i][1];
+    wood[i]=Math.sqrt(dx*dx+dz*dz);total+=wood[i];
+  }
+  var pos=[],uv=[],idx=[],u=0;
+  for(var k=0;k<4;k++){
+    var m=(k+1)%4,base=pos.length/3;
+    var u0=u/total,u1=(u+wood[k])/total;
+    pos.push(O[k][0],y,O[k][1], O[m][0],y,O[m][1], I[m][0],y,I[m][1], I[k][0],y,I[k][1]);
+    uv.push(u0,1, u1,1, u1,0, u0,0);
+    idx.push(base,base+1,base+2, base,base+2,base+3);
+    u+=wood[k];
+  }
+  if(hint.geo)hint.geo.dispose();
+  var g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  g.setIndex(idx);
+  hint.geo=g;hint.mesh.geometry=g;
+  hint.tex.repeat.x=Math.max(4,Math.round(total/1.5));
+}
+function stepHint(dt){
+  if(!hint.group)return;
+  if(!hint.part||!SET.hint){hint.group.visible=false;return;}
+  hint.group.visible=true;
+  hint.tex.offset.x=(hint.tex.offset.x-(dt||0.016)*0.22)%1;
+}
+function setNextHint(p){
+  ensureHint();
+  if(p===hint.part)return;
+  hint.part=p||null;
+  if(p)buildHintFrame(p);
+}
+(function initSet(){
+  var pop=document.getElementById('setPop'),btn=document.getElementById('bSet');
+  btn.onclick=function(e){e.stopPropagation();pop.classList.toggle('show');};
+  document.addEventListener('click',function(e){if(!pop.contains(e.target)&&e.target!==btn)pop.classList.remove('show');});
+  var hl=document.getElementById('setHL');hl.checked=SET.hl;
+  hl.onchange=function(){SET.hl=hl.checked;saveSET();applySET();};
+  var nt=document.getElementById('setNotes');nt.checked=SET.notes;
+  nt.onchange=function(){SET.notes=nt.checked;saveSET();applySET();};
+  var md=document.getElementById('setMode');md.value=SET.mode;
+  md.onchange=function(){SET.mode=md.value;saveSET();applySET();};
+  var sz=document.getElementById('setSize');sz.value=SET.size;
+  sz.oninput=function(){SET.size=parseInt(sz.value,10)||100;saveSET();applySET();};
+  var colors=['#22d3ee','#06b6d4','#22c55e','#f59e0b','#f43f5e','#8b5cf6'];
+  var box=document.getElementById('setColors');
+  var cp=document.createElement('input');cp.type='color';cp.title='自定义颜色';
+  function markSel(){
+    for(var j=0;j<box.children.length;j++)box.children[j].classList.remove('sel');
+    var cur=String(SET.color).toLowerCase();
+    for(var j2=0;j2<colors.length;j2++){if(colors[j2]===cur)box.children[j2].classList.add('sel');}
+    if(/^#[0-9a-f]{6}$/i.test(SET.color))cp.value=SET.color;
+  }
+  colors.forEach(function(c){
+    var b=document.createElement('button');b.type='button';b.className='swatch';b.style.background=c;b.title=c;
+    b.onclick=function(){SET.color=c;saveSET();markSel();applySET();};
+    box.appendChild(b);
+  });
+  cp.oninput=function(){SET.color=cp.value;saveSET();markSel();applySET();};
+  box.appendChild(cp);
+  markSel();
+  var hn=document.getElementById('setHint');hn.checked=SET.hint;
+  hn.onchange=function(){SET.hint=hn.checked;saveSET();};
+  var hlead=document.getElementById('setHintLead');hlead.value=SET.hintLead;
+  hlead.oninput=function(){SET.hintLead=parseFloat(hlead.value)||2;saveSET();};
+  var hcolors=['#fbbf24','#22d3ee','#4ade80','#f472b6','#f8fafc'];
+  var hbox=document.getElementById('setHintColors');
+  var hcp=document.createElement('input');hcp.type='color';hcp.title='自定义颜色';
+  function hmarkSel(){
+    for(var j=0;j<hbox.children.length;j++)hbox.children[j].classList.remove('sel');
+    var cur=String(SET.hintColor).toLowerCase();
+    for(var j2=0;j2<hcolors.length;j2++){if(hcolors[j2]===cur)hbox.children[j2].classList.add('sel');}
+    if(/^#[0-9a-f]{6}$/i.test(SET.hintColor))hcp.value=SET.hintColor;
+  }
+  hcolors.forEach(function(c){
+    var b=document.createElement('button');b.type='button';b.className='swatch';b.style.background=c;b.title=c;
+    b.onclick=function(){SET.hintColor=c;saveSET();hmarkSel();applySET();};
+    hbox.appendChild(b);
+  });
+  hcp.oninput=function(){SET.hintColor=hcp.value;saveSET();hmarkSel();applySET();};
+  hbox.appendChild(hcp);
+  hmarkSel();
+  var df=document.getElementById('setDiff');
+  if(df){df.value=String(SET.diff||5);df.onchange=function(){SET.diff=parseInt(df.value,10)||5;saveSET();};}
+  var bgSel=document.getElementById('setBg');
+  if(bgSel){bgSel.value=SET.bg||'deep';bgSel.onchange=function(){SET.bg=bgSel.value;saveSET();applyBg();};}
+  var outSel=document.getElementById('setOut');
+  if(outSel){
+    refreshOutSel();
+    outSel.onchange=function(){
+      var v=outSel.value;
+      if(v==='__sf2load'){if(sf2FileIn)sf2FileIn.click();refreshOutSel();return;}
+      if(v.indexOf('__sf2b:')===0){
+        var file=v.slice(7),bank=null;
+        SF2_BANKS.forEach(function(b){if(b.file===file)bank=b;});
+        SET.outport=v;saveSET();
+        if(bank)loadSf2Bundled(bank);
+        refreshOutSel();
+        if(window.__ui)window.__ui.toast('音色输出：'+(bank?bank.label:v));
+        return;
+      }
+      SET.outport=v;saveSET();
+      refreshOutSel();
+      if(window.__ui)window.__ui.toast(v?(v==='__sf2'?'音色输出：SoundFont 音色包':'音色输出：外部 MIDI 端口'):'已切回内置合成器');
+    };
+    var psel=document.getElementById('setSf2');
+    if(psel){psel.onchange=function(){
+      SET.sf2preset=parseInt(psel.value,10)||0;saveSET();
+      if(window.__sf2)window.__sf2.setPreset(window.__sf2order?window.__sf2order[SET.sf2preset]:SET.sf2preset);
+      if(window.__sf2RefreshFav)window.__sf2RefreshFav();
+    };}
+    (function autoLoadBundled(){
+      var op=SET.outport||'';
+      if(op.indexOf('__sf2b:')!==0)return;
+      var file=op.slice(7),bank=null;
+      SF2_BANKS.forEach(function(b){if(b.file===file)bank=b;});
+      if(bank)setTimeout(function(){loadSf2Bundled(bank);},350);
+    })();
+  }
+  /* ---- 两级导航 ---- */
+  var TITLES={appearance:'外观',sound:'音色',follow:'跟弹练习',keys:'键盘弹奏',rec:'录音',misc:'通用'};
+  var grid=document.getElementById('setGrid'),back=document.getElementById('setBack'),title=document.getElementById('setTitle');
+  function showPane(name){
+    var panes=pop.querySelectorAll('.pane');
+    for(var i=0;i<panes.length;i++)panes[i].classList.toggle('on',panes[i].getAttribute('data-pane')===name);
+    grid.style.display=name?'none':'grid';
+    back.style.display=name?'inline-block':'none';
+    title.textContent=name?(TITLES[name]||'设置'):'设置';
+  }
+  var cards=grid.querySelectorAll('.card');
+  for(var ci=0;ci<cards.length;ci++){(function(c){c.onclick=function(){showPane(c.getAttribute('data-pane'));};})(cards[ci]);}
+  back.onclick=function(){showPane(null);};
+  btn.onclick=function(e){e.stopPropagation();pop.classList.toggle('show');if(pop.classList.contains('show'))showPane(null);};
+  /* ---- 跟弹练习 ---- */
+  var sc=document.getElementById('setScores');sc.checked=!!SET.scores;
+  sc.onchange=function(){SET.scores=sc.checked;saveSET();};
+  var lp=document.getElementById('setLoop2');lp.checked=!!SET.loopAB;
+  lp.onchange=function(){SET.loopAB=lp.checked;saveSET();applySET();};
+  var hd=document.getElementById('setHands');hd.value=SET.hands||'both';
+  hd.onchange=function(){SET.hands=hd.value;saveSET();};
+  /* ---- 键盘弹奏 ---- */
+  var kbk=document.getElementById('setKb');kbk.checked=SET.kbPlay!==false;
+  kbk.onchange=function(){SET.kbPlay=kbk.checked;saveSET();};
+  var kbo=document.getElementById('setKbOct');kbo.value=String(SET.kbOct||0);
+  kbo.onchange=function(){SET.kbOct=parseInt(kbo.value,10)||0;saveSET();};
+  var vc=document.getElementById('setVel');vc.value=SET.velCurve||'std';
+  vc.onchange=function(){SET.velCurve=vc.value;saveSET();};
+  var pdl=document.getElementById('setPedal');pdl.checked=!!SET.pedalLed;
+  pdl.onchange=function(){SET.pedalLed=pdl.checked;saveSET();pedalLed(false);};
+  /* ---- 音色 · 混响 ---- */
+  var rv=document.getElementById('setRev');rv.checked=!!SET.reverb;
+  var rva=document.getElementById('setRevAmt');rva.value=SET.revAmt||'mid';
+  function applyRev(){if(window.__sf2&&window.__sf2.setReverb)window.__sf2.setReverb(SET.reverb,SET.revAmt);}
+  window.__applyRev=applyRev;
+  rv.onchange=function(){SET.reverb=rv.checked;saveSET();applyRev();};
+  rva.onchange=function(){SET.revAmt=rva.value;saveSET();applyRev();};
+  /* ---- 音色搜索 + 收藏 ---- */
+  var ssearch=document.getElementById('sf2Search');
+  var sfav=document.getElementById('sf2FavBtn');
+  window.__sf2RefreshFav=function(){
+    if(!sfav)return;
+    if(!sf2Ready()){sfav.classList.remove('on');return;}
+    var orig=window.__sf2order?window.__sf2order[SET.sf2preset||0]:(SET.sf2preset||0);
+    sfav.classList.toggle('on',sf2FavList().indexOf(sf2Keyof(orig))>=0);
+  };
+  if(ssearch)ssearch.oninput=function(){populateSf2Presets();};
+  if(sfav)sfav.onclick=function(){
+    if(!sf2Ready())return;
+    var orig=window.__sf2order?window.__sf2order[SET.sf2preset||0]:(SET.sf2preset||0);
+    var key=sf2Keyof(orig);var list=sf2FavList();var i=list.indexOf(key);
+    if(i>=0)list.splice(i,1);else list.push(key);
+    SET.sf2fav=list;saveSET();populateSf2Presets();window.__sf2RefreshFav();
+    toast(i>=0?'已取消收藏':'已收藏');
+  };
+  /* ---- 录音设置 ---- */
+  var ron=document.getElementById('setRecOn');ron.checked=!!SET.recOn;
+  ron.onchange=function(){SET.recOn=ron.checked;saveSET();applySET();};
+  /* ---- 通用 ---- */
+  document.getElementById('bDiag').onclick=copyDiag;
+  document.getElementById('bReset').onclick=function(){
+    if(!confirm('恢复所有设置为默认值？'))return;
+    try{localStorage.removeItem('smk25set');}catch(_){}
+    location.reload();
+  };
+  applySET();
+})();
+
+/* ---------- 主循环 ---------- */
+var clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  var dt=Math.min(0.05,clock.getDelta()),t=clock.elapsedTime;
+  stepEntrance(dt);
+  if(camFlight){
+    camFlight.t+=dt;var k=Math.min(1,camFlight.t/0.9),e=easeOutCubic(k);
+    sph.r=camFlight.from.r+(camFlight.to.r-camFlight.from.r)*e;
+    sph.theta=camFlight.from.theta+(camFlight.to.theta-camFlight.from.theta)*e;
+    sph.phi=camFlight.from.phi+(camFlight.to.phi-camFlight.from.phi)*e;
+    target.lerpVectors(camFlight.from.t,camFlight.to.t?new THREE.Vector3(camFlight.to.t[0],camFlight.to.t[1],camFlight.to.t[2]):target,e);
+    applyCam();
+    if(k>=1)camFlight=null;
+  }
+  stepTweens(dt);
+  stepHits();
+  stepHint(dt);
+  for(var i=0;i<model.pads.length;i++){var pd=model.pads[i];
+    if(!tweens.some(function(tw){return tw.p===pd;}))
+      pd.lensMat.emissiveIntensity=pd.baseEmissive+Math.sin(t*2.2+i*0.9)*0.12;
+  }
+  renderer.render(scene,camera);
+}
+animate();
+addEventListener('resize',function(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+
+/* ---------- 对外接口 ---------- */
+window.__smk25={
+  parts:parts,byId:byId,model:model,camera:camera,renderer:renderer,
+  setView:setView,VIEWS:VIEWS,
+  pressVisual:function(p){tweens.push({p:p,t:0,kind:'key'});},
+  hitKey:function(midi){var p=fitPart(midi);if(p)addHit(p);},
+  setHint:function(p){setNextHint(p);},
+  hintFlash:function(hex,ms){
+    if(!hint.mat)return;
+    clearTimeout(hint._ft);
+    hint.mat.color.set(hex);
+    hint._ft=setTimeout(function(){hint.mat.color.set(SET.hintColor);},ms||250);
+  },
+  hintActive:function(){return hint.part?hint.part.id:null;},
+  hintInfo:function(){
+    return {part:hint.part?hint.part.id:null,visible:hint.group?hint.group.visible:false,on:SET.hint,
+      repeat:hint.tex?hint.tex.repeat.x:0,offset:hint.tex?+hint.tex.offset.x.toFixed(3):0,
+      col:hint.mat?hint.mat.color.getHexString():null};
+  },
+  getHintOpts:function(){return {on:SET.hint,color:SET.hintColor,lead:SET.hintLead};},
+  getDiffOpts:function(){
+    var tol=[5,4,3,2,0][Math.max(1,Math.min(5,SET.diff||5))-1];
+    return {level:SET.diff||5,tol:tol==null?0:tol};
+  },
+  scoresOn:function(){return !!SET.scores;},
+  handsMode:function(){return SET.hands||'both';},
+  loopOn:function(){return !!SET.loopAB;},
+  get started(){return started;}
+};
+window.__ui={
+  dockMode:function(mode){
+    dockIdle.style.display=mode==='idle'?'flex':'none';
+    dockSong.style.display=mode==='song'?'flex':'none';
+    dockPractice.style.display=mode==='practice'?'flex':'none';
+    wakeDock();
+  },
+  hidePop:function(){songPop.classList.remove('show');},
+  toast:toast,
+  showResult:function(o){
+    var el=document.getElementById('resultPop');if(!el)return;
+    el.innerHTML='';
+    var t=document.createElement('div');t.style.cssText='font-size:14px;font-weight:700;';t.textContent=o.title||'演奏完成';el.appendChild(t);
+    var st=document.createElement('div');st.className='big';
+    var nStar=Math.max(0,Math.min(3,o.stars||0)),ss='';
+    for(var i=0;i<3;i++)ss+=i<nStar?'★':'☆';
+    st.textContent=ss;el.appendChild(st);
+    function line(k,v){var d=document.createElement('div');d.className='ln';var a=document.createElement('span');a.textContent=k;var b=document.createElement('b');b.textContent=v;d.appendChild(a);d.appendChild(b);el.appendChild(d);}
+    line('准确率',Math.round((o.acc||0)*100)+'%');
+    line('最大连击','x'+(o.maxCombo||0));
+    if(o.total!=null)line('音符数',String(o.total));
+    var btns=document.createElement('div');btns.className='btns';
+    var b1=document.createElement('button');b1.className='pri';b1.textContent='再来一次';
+    b1.onclick=function(){el.classList.remove('show');if(o.retry)o.retry();};
+    var b2=document.createElement('button');b2.textContent='关闭';
+    b2.onclick=function(){el.classList.remove('show');if(o.exit)o.exit();};
+    btns.appendChild(b1);btns.appendChild(b2);el.appendChild(btns);
+    el.classList.add('show');
+  },
+  hideResult:function(){var el=document.getElementById('resultPop');if(el)el.classList.remove('show');}
+};
+/* 录音面板 */
+(function initRec(){
+  var rb=$id('bRec'),rp=$id('recPop');
+  if(rb&&rp)rb.onclick=function(e){e.stopPropagation();rp.classList.toggle('show');updateRecUI();};
+  document.addEventListener('click',function(e){if(rp&&rp.classList.contains('show')&&!rp.contains(e.target)&&e.target!==rb)rp.classList.remove('show');});
+  var bt=$id('bRecToggle');if(bt)bt.onclick=function(){rec.recording?recStop():recStart();updateRecUI();};
+  var bp=$id('bRecPlay');if(bp)bp.onclick=function(){recPlay();};
+  var bc=$id('bRecClear');if(bc)bc.onclick=function(){recClear();toast('录音已清除');};
+})();
+/* 跟弹模块挂载 */
+if(window.SMK25Follow)window.SMK25Follow.init({
+  pop:songPop,
+  title:$id('staffTitle'),meta:$id('staffMeta'),chord:$id('chordNow'),
+  sheets:$id('staffSheets'),cursor:$id('staffCursor'),body:$id('staffBody'),
+  songName:$id('songName'),playToggle:$id('bPlayToggle'),prog:$id('prog'),
+  rate:$id('rate'),score:$id('score'),exit:$id('bExit'),
+  scoreMode:$id('scoreMode'),acc:$id('bAcc'),
+  bSA:$id('bSA'),bSB:$id('bSB'),bSLoop:$id('bSLoop'),
+  bFollow:$id('bFollow'),followPop:$id('followPop'),
+  pExit:$id('bPExit'),pName:$id('pName'),pNext:$id('pNext'),pProg:$id('pProg'),pRestart:$id('bPRestart')
+});
+})();
+</script>
+</body>
+</html>
+
+
+
