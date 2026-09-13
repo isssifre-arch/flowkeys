@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "flowkeys"
 version = "0.3.2"
 description = "流光钢琴 · MIDI 键盘跟弹学习应用"
