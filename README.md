@@ -41,8 +41,8 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| `流光钢琴-便携版-vX.X.X.exe` | 双击直接用，免安装 |
-| `流光钢琴-安装包-vX.X.X.exe` | 安装到系统（开始菜单 / 卸载项） |
+| `FlowKeys-portable-vX.X.X.exe` | 便携版：双击直接用，免安装 |
+| `FlowKeys-setup-vX.X.X.exe` | 安装包：安装到系统（开始菜单 / 卸载项） |
 
 系统要求：Windows 10 / 11（依赖系统自带 WebView2；老系统可安装 [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)）。
 
