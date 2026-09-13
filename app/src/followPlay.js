@@ -1,9 +1,10 @@
-/* 跟弹：本地曲库 + 谱面（五线谱/简谱/钢琴块）+ 3D 联动 + 打分
+﻿/* 跟弹：本地曲库 + 谱面（五线谱/简谱/钢琴块）+ 3D 联动 + 打分
  * 依赖 window.__smk25（3D）、Vex.Flow（CDN，可缺省）、./songs/index.json
  */
 (function () {
 'use strict';
 function S() { return window.__smk25; }
+function T(k) { return window.__T ? window.__T.apply(null, Array.prototype.slice.call(arguments)) : k; }
 var NAMES = ['c', 'c#', 'd', 'd#', 'e', 'f', 'f#', 'g', 'g#', 'a', 'a#', 'b'];
 var JP = ['1', '#1', '2', '#2', '3', '4', '#4', '5', '#5', '6', '#6', '7'];
 
@@ -28,12 +29,12 @@ function setLoopPoint(which) {
   if (which === 'A') { loopA = t; if (loopB != null && loopB <= loopA) loopB = null; }
   else { loopB = t; if (loopA != null && loopB <= loopA) loopA = null; }
   updateLoopUI();
-  if (window.__ui) window.__ui.toast((which === 'A' ? '循环起点 A' : '循环终点 B') + '：' + t.toFixed(1) + 's' + ((loopA == null || loopB == null) ? '（再设另一端）' : ''));
+  if (window.__ui) window.__ui.toast((which === 'A' ? T('fp.loopA') : T('fp.loopB')) + '：' + t.toFixed(1) + 's' + ((loopA == null || loopB == null) ? T('fp.loopMore') : ''));
 }
 function toggleLoop() {
-  if (loopA == null || loopB == null) { if (window.__ui) window.__ui.toast('先设好 A 和 B 两个点'); return; }
+  if (loopA == null || loopB == null) { if (window.__ui) window.__ui.toast(T('fp.loopNeed')); return; }
   loopOn = !loopOn; updateLoopUI();
-  if (window.__ui) window.__ui.toast(loopOn ? 'A-B 循环：开' : 'A-B 循环：关');
+  if (window.__ui) window.__ui.toast(T(loopOn ? 'fp.loopOn' : 'fp.loopOff'));
 }
 function updateLoopUI() {
   if (!st.els) return;
@@ -97,7 +98,7 @@ async function init(els) {
   });
   st.audio.addEventListener('error', function () {
     if (!st.audio.src) return;
-    if (window.__ui) window.__ui.toast('该曲目音频缺失，可把同名 mp3 放进 songs/ 目录');
+    if (window.__ui) window.__ui.toast(T('toast.audioMissing'));
     if (ACC) setAcc(false);
   });
 }
@@ -109,22 +110,22 @@ function renderPicker() {
   pop.style.overflowY = '';
   var imp = document.createElement('div');
   imp.className = 'item';
-  var imn = document.createElement('span'); imn.textContent = '＋ 导入 MIDI（可多选）';
-  var iar = document.createElement('small'); iar.textContent = '本地文件';
+  var imn = document.createElement('span'); imn.textContent = T('fp.import');
+  var iar = document.createElement('small'); iar.textContent = T('fp.importSub');
   imp.appendChild(imn); imp.appendChild(iar);
   imp.onclick = function (e) { e.stopPropagation(); if (st.fileIn) st.fileIn.click(); };
   pop.appendChild(imp);
   var search = document.createElement('div');
   search.className = 'item';
-  var snm = document.createElement('span'); snm.textContent = '🔍 在线搜索 MIDI';
-  var sar = document.createElement('small'); sar.textContent = 'BitMidi · 一键导入';
+  var snm = document.createElement('span'); snm.textContent = T('fp.online');
+  var sar = document.createElement('small'); sar.textContent = T('fp.onlineSub');
   search.appendChild(snm); search.appendChild(sar);
   search.onclick = function (e) { e.stopPropagation(); renderSearchView(); };
   pop.appendChild(search);
   if (!st.list.length) {
     var em0 = document.createElement('div');
     em0.style.cssText = 'padding:10px 12px;color:#9ca3af;font-size:12px';
-    em0.textContent = '曲库为空（songs/index.json 未找到）';
+    em0.textContent = T('fp.empty');
     pop.appendChild(em0);
     return;
   }
@@ -132,7 +133,7 @@ function renderPicker() {
   filterBox.style.cssText = 'padding:2px 8px 8px';
   var fin = document.createElement('input');
   fin.type = 'text';
-  fin.placeholder = '在曲库中搜索…';
+  fin.placeholder = T('fp.searchSong');
   fin.style.cssText = 'width:100%;box-sizing:border-box;background:#111827;border:1px solid #374151;color:#e5e7eb;border-radius:8px;padding:6px 10px;font-size:12.5px;outline:none;font-family:inherit';
   filterBox.appendChild(fin);
   pop.appendChild(filterBox);
@@ -147,7 +148,7 @@ function renderPicker() {
     if (!list.length) {
       var em = document.createElement('div');
       em.style.cssText = 'padding:10px 12px;color:#9ca3af;font-size:12px';
-      em.textContent = '没有匹配的曲目';
+      em.textContent = T('fp.noMatch');
       songList.appendChild(em);
       return;
     }
@@ -161,7 +162,7 @@ function renderPicker() {
       right.appendChild(ar);
       if (song.isLocal) {
         var del = document.createElement('span');
-        del.textContent = '×'; del.title = '删除';
+        del.textContent = '×'; del.title = T('fp.del');
         del.style.cssText = 'color:#9ca3af;font-size:14px;padding:0 2px';
         del.onclick = function (e) { e.stopPropagation(); deleteLocalSong(song.id); };
         right.appendChild(del);
@@ -180,8 +181,8 @@ async function loadById(id) {
   if (!meta) return;
   if (meta.isLocal) {
     var ls = loadLocalSong(id);
-    if (!ls) { if (window.__ui) window.__ui.toast('导入曲目已丢失，请重新导入'); return; }
-    ls.name = meta.name; ls.artist = 'MIDI 导入';
+    if (!ls) { if (window.__ui) window.__ui.toast(T('fp.songMissing')); return; }
+    ls.name = meta.name; ls.artist = T('fp.artistImport');
     loadSong(ls);
     return;
   }
@@ -193,7 +194,7 @@ async function loadById(id) {
     if (meta.audio) song.audio = meta.audio;
     loadSong(song);
   } catch (e) {
-    if (window.__ui) window.__ui.toast('曲目载入失败');
+    if (window.__ui) window.__ui.toast(T('fp.songFail'));
   }
 }
 
@@ -299,7 +300,7 @@ function barsOf(song, barSec) {
 function buildStaff() {
   var VF = window.Vex && window.Vex.Flow;
   var host = st.els.sheets; host.innerHTML = '';
-  if (!VF) { host.innerHTML = '<div style="padding:20px;color:#666">VexFlow 加载失败（可切「简谱」模式，无需联网）。</div>'; return; }
+  if (!VF) { host.innerHTML = '<div style="padding:20px;color:#666">' + T('fp.vexFail') + '</div>'; return; }
   var song = st.song, bpm = st.bpm, beat = 60 / bpm, barSec = 4 * beat;
   var chords = resolveChords(song.chords, barSec);
   song._chordsR = chords;
@@ -307,7 +308,7 @@ function buildStaff() {
   var maxBar = Math.max.apply(null, [0].concat(Object.keys(bars).map(Number))
     .concat(chords.map(function (c) { return Math.floor(c.time / barSec); })));
   var MPS = 4, W = 268;
-  st.els.meta.textContent = Math.round(bpm) + ' BPM · ' + (maxBar + 1) + '小节';
+  st.els.meta.textContent = T('fp.bars', Math.round(bpm), maxBar + 1);
   for (var s0 = 0; s0 <= maxBar; s0 += MPS) {
     (function (s0) {
       var row = document.createElement('div'); row.className = 'sysRow';
@@ -371,7 +372,7 @@ function buildJianpu() {
   var maxBar = Math.max.apply(null, [0].concat(Object.keys(bars).map(Number))
     .concat(chords.map(function (c) { return Math.floor(c.time / barSec); })));
   var MPS = 4, W = 268;
-  st.els.meta.textContent = Math.round(bpm) + ' BPM · ' + (maxBar + 1) + '小节 · 简谱（1=C）';
+  st.els.meta.textContent = T('fp.barsJp', Math.round(bpm), maxBar + 1);
   for (var s0 = 0; s0 <= maxBar; s0 += MPS) {
     (function (s0) {
       var row = document.createElement('div'); row.className = 'sysRow jpRow';
@@ -654,7 +655,7 @@ function renderFollowPicker() {
   if (!pop) return;
   pop.innerHTML = '';
   if (!st.list.length) {
-    pop.innerHTML = '<div style="padding:10px 12px;color:#9ca3af;font-size:12px">曲库为空</div>';
+    pop.innerHTML = '<div style="padding:10px 12px;color:#9ca3af;font-size:12px">' + T('fp.empty') + '</div>';
     return;
   }
   st.list.forEach(function (song) {
@@ -673,19 +674,19 @@ async function startPractice(id) {
   var song;
   if (meta.isLocal) {
     song = loadLocalSong(id);
-    if (!song) { if (window.__ui) window.__ui.toast('导入曲目已丢失，请重新导入'); return; }
+    if (!song) { if (window.__ui) window.__ui.toast(T('fp.songMissing')); return; }
     song.name = meta.name;
   } else {
     try {
       var r = await fetch('./songs/' + meta.file);
       song = await r.json();
       song.name = meta.name; song.artist = meta.artist;
-    } catch (e) { if (window.__ui) window.__ui.toast('曲目载入失败'); return; }
+    } catch (e) { if (window.__ui) window.__ui.toast(T('fp.songFail')); return; }
   }
   var acc = (song.acc && song.acc.length) ? song.acc : null;
   var mode = (S() && S().handsMode) ? S().handsMode() : 'both';
   var pick = song.melody;
-  if (mode === 'acc') { if (acc) pick = acc; else if (window.__ui) window.__ui.toast('该曲目无伴奏声部，先用旋律练习'); }
+  if (mode === 'acc') { if (acc) pick = acc; else if (window.__ui) window.__ui.toast(T('fp.accFallback')); }
   song.melody.forEach(function (n) { n.pc = n.midi % 12; n._key = fitPart(n.midi); });
   if (song.acc) song.acc.forEach(function (n) { n.pc = n.midi % 12; n._key = fitPart(n.midi); });
   pr.on = true; pr.song = song; pr.idx = 0; pr.list = pick;
@@ -701,7 +702,7 @@ function prUpdate() {
   var list = (pr.song && pr.list && pr.list.length) ? pr.list : (pr.song ? pr.song.melody : []);
   var t = (pr.on && pr.song) ? list[pr.idx] : null;
   if (st.els.pProg) st.els.pProg.textContent = pr.song ? (pr.idx + '/' + list.length) : '';
-  if (st.els.pNext) st.els.pNext.textContent = pr.on ? (t ? ('下一键 ' + prName(t.midi)) : '完成！') : '';
+  if (st.els.pNext) st.els.pNext.textContent = pr.on ? (t ? T('practice.next', prName(t.midi)) : T('practice.done')) : '';
   if (S() && S().setHint) S().setHint((pr.on && t && t._key) ? t._key : null);
 }
 function prInput(midi) {
@@ -718,14 +719,14 @@ function prInput(midi) {
       if (S() && S().scoresOn && S().scoresOn() && (pr.right + pr.wrong) > 0) {
         var acc2 = pr.right / (pr.right + pr.wrong);
         window.__ui.showResult({
-          title: '跟弹完成 · ' + pr.song.name,
+          title: T('result.practiceDone', pr.song.name),
           acc: acc2, maxCombo: pr.maxCombo, total: list.length,
           stars: acc2 >= 0.95 ? 3 : acc2 >= 0.85 ? 2 : acc2 >= 0.7 ? 1 : 0,
           retry: function () { restartPractice(); },
           exit: function () { exitPractice(); }
         });
       } else {
-        window.__ui.toast('跟弹完成 · ' + pr.song.name);
+        window.__ui.toast(T('result.practiceDone', pr.song.name));
       }
     }
   } else {
@@ -947,7 +948,7 @@ function parseMidiToSong(buf, filename) {
   var lastA = notesAcc.length ? notesAcc[notesAcc.length - 1] : null;
   var endT = Math.max(lastN.start + lastN.dur, lastA ? lastA.start + lastA.dur : 0);
   var name = String(filename || 'MIDI').replace(/\.(mid|midi)$/i, '').slice(0, 40);
-  var out = { name: name, artist: 'MIDI 导入', bpm: Math.round(bpm), duration: Math.round((endT + 1.5) * 100) / 100, melody: notes, chords: [] };
+  var out = { name: name, artist: T('fp.artistImport'), bpm: Math.round(bpm), duration: Math.round((endT + 1.5) * 100) / 100, melody: notes, chords: [] };
   if (notesAcc.length >= 3) out.acc = notesAcc;
   return out;
 }
@@ -962,14 +963,14 @@ function importMidiFiles(files) {
       try { song = parseMidiToSong(fr.result, f.name); } catch (_) { song = null; }
       if (song && song.melody.length > 3) {
         var id = 'local:' + Date.now() + '_' + idx;
-        var meta = { id: id, name: song.name, artist: 'MIDI 导入 · ' + song.melody.length + '音', isLocal: true, added: Date.now(), bpm: song.bpm, duration: song.duration };
+        var meta = { id: id, name: song.name, artist: T('fp.artistImport') + ' · ' + song.melody.length, isLocal: true, added: Date.now(), bpm: song.bpm, duration: song.duration };
         if (saveLocalSong(meta, song)) { st.list = st.list.concat([meta]); imported++; }
         else failed++;
       } else failed++;
       if (--pending === 0) {
         renderPicker();
         renderFollowPicker();
-        if (window.__ui) window.__ui.toast('已导入 ' + imported + ' 首' + (failed ? '（' + failed + ' 首无法解析）' : ''));
+        if (window.__ui) window.__ui.toast(T('fp.imported', imported) + (failed ? T('fp.importedFail', failed) : ''));
       }
     };
     fr.readAsArrayBuffer(f);
@@ -1015,12 +1016,12 @@ function searchMidi(query, cb) {
 async function importFromBitmidi(slug) {
   var html = await netGetText('https://bitmidi.com/' + slug);
   var m = html.match(/\/uploads\/\d+\.mid/);
-  if (!m) throw new Error('未找到下载链接');
+  if (!m) throw new Error(T('fp.dlMissing'));
   var buf = await netGetBytes('https://bitmidi.com' + m[0]);
   var song = parseMidiToSong(buf, slug.replace(/-mid$/, ''));
-  if (!song || song.melody.length <= 3) throw new Error('MIDI 解析失败');
+  if (!song || song.melody.length <= 3) throw new Error(T('fp.midiFail'));
   var id = 'local:' + Date.now();
-  var meta = { id: id, name: song.name, artist: 'MIDI 导入 · ' + song.melody.length + '音', isLocal: true, added: Date.now(), bpm: song.bpm, duration: song.duration };
+  var meta = { id: id, name: song.name, artist: T('fp.artistImport') + ' · ' + song.melody.length, isLocal: true, added: Date.now(), bpm: song.bpm, duration: song.duration };
   saveLocalSong(meta, song);
   st.list = st.list.concat([meta]);
   renderPicker();
@@ -1034,7 +1035,7 @@ function renderSearchView() {
   pop.style.overflowY = 'auto';
   var back = document.createElement('div');
   back.className = 'item';
-  var bs = document.createElement('span'); bs.textContent = '← 返回曲库';
+  var bs = document.createElement('span'); bs.textContent = T('fp.back');
   back.appendChild(bs);
   back.onclick = function () { renderPicker(); };
   pop.appendChild(back);
@@ -1057,18 +1058,18 @@ function renderSearchView() {
   function doSearch() {
     var q = inp.value.trim();
     if (!q) return;
-    list.innerHTML = '<div style="padding:10px 12px;color:#9ca3af;font-size:12px">搜索中…（需联网）</div>';
+    list.innerHTML = '<div style="padding:10px 12px;color:#9ca3af;font-size:12px">' + T('fp.searchingNet') + '</div>';
     searchMidi(q, function (res, err) {
       if (!res) {
         list.innerHTML = '';
         var d0 = document.createElement('div');
         d0.style.cssText = 'padding:10px 12px;color:#9ca3af;font-size:12px';
-        d0.textContent = hasTauri() ? '搜索失败，请检查网络' : '搜索失败（浏览器预览受跨域限制，桌面版可用）';
+        d0.textContent = hasTauri() ? T('fp.searchFailNet') : T('fp.searchFailCors');
         list.appendChild(d0);
         return;
       }
       if (!res.length) {
-        list.innerHTML = '<div style="padding:10px 12px;color:#9ca3af;font-size:12px">没有结果</div>';
+        list.innerHTML = '<div style="padding:10px 12px;color:#9ca3af;font-size:12px">' + T('fp.searchEmpty') + '</div>';
         return;
       }
       list.innerHTML = '';
@@ -1079,22 +1080,22 @@ function renderSearchView() {
         nm.textContent = it.title;
         nm.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px';
         var ar = document.createElement('small');
-        ar.textContent = '导入';
+        ar.textContent = T('fp.importBtn');
         d.appendChild(nm); d.appendChild(ar);
         d.onclick = function () {
           if (d._busy) return;
           d._busy = 1;
-          ar.textContent = '下载中…';
+          ar.textContent = T('fp.downloading');
           importFromBitmidi(it.slug).then(function (meta) {
             if (window.__ui) {
-              window.__ui.toast('已导入：' + meta.name);
+              window.__ui.toast(T('fp.addedOne', meta.name));
               window.__ui.hidePop();
             }
             loadById(meta.id);
           }).catch(function (e) {
             d._busy = 0;
-            ar.textContent = '失败';
-            if (window.__ui) window.__ui.toast('导入失败：' + (e && e.message ? e.message : e));
+            ar.textContent = T('fp.failed');
+            if (window.__ui) window.__ui.toast(T('fp.addFail', (e && e.message ? e.message : e)));
           });
         };
         list.appendChild(d);
@@ -1149,14 +1150,14 @@ function endSong(finished) {
   if (S() && S().scoresOn && S().scoresOn() && tot > 0) {
     var acc = st.hits / tot;
     window.__ui.showResult({
-      title: '演奏完成 · ' + (st.song ? st.song.name : ''),
+      title: T('result.songDone', (st.song ? st.song.name : '')),
       acc: acc, maxCombo: st.maxCombo, total: tot,
       stars: acc >= 0.95 ? 3 : acc >= 0.85 ? 2 : acc >= 0.7 ? 1 : 0,
       retry: function () { seek(0); play(); },
       exit: function () { exitSong(); }
     });
   } else {
-    window.__ui.toast(st.els.score.textContent !== '—' ? ('演奏完成 · 命中率 ' + st.els.score.textContent) : '演奏完成');
+    window.__ui.toast(st.els.score.textContent !== '—' ? T('fp.scoreHit', st.els.score.textContent) : T('fp.songDoneShort'));
   }
 }
 function updateScore() {
@@ -1187,7 +1188,7 @@ function play() {
   st.playing = true; st.paused = false;
   if (ACC && st.audio.src) {
     st.audio.playbackRate = rateVal();
-    st.audio.play().catch(function () { st.playing = false; updateTransport(); if (window.__ui) window.__ui.toast('音频被浏览器拦截，点一下页面再按播放'); });
+    st.audio.play().catch(function () { st.playing = false; updateTransport(); if (window.__ui) window.__ui.toast(T('fp.audioBlocked')); });
   } else {
     st.vStart = performance.now() / 1000 - (st.vOffset || 0) / rateVal();
   }

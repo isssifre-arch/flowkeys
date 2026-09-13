@@ -159,17 +159,17 @@
 <div id="splash"><span id="splashText">正在扫描 MIDI 键盘…</span><button id="splashBtn" style="display:none">开始</button></div>
 <div id="dock">
   <div id="dockIdle" style="display:flex;align-items:center;gap:10px">
-    <button id="bSongs">曲目</button>
+    <button id="bSongs" data-i18n="dock.songs">曲目</button>
     <div class="sep"></div>
-    <button id="bFollow" title="跟弹练习：不限速度，按自己的节奏来">跟弹</button>
+    <button id="bFollow" data-i18n="dock.follow" title="跟弹练习：不限速度，按自己的节奏来">跟弹</button>
     <div class="sep"></div>
     <select id="timbre"></select>
     <div class="sep"></div>
     <input id="vol" type="range" min="0" max="100" value="80" title="音量">
     <div class="sep"></div>
-    <button id="bRec" style="display:none" title="录音">● 录音</button>
+    <button id="bRec" style="display:none" data-i18n="rec.button" data-i18n-title="dock.record" title="录音">● 录音</button>
     <div class="sep" id="recSep" style="display:none"></div>
-    <button id="bSet">设置</button>
+    <button id="bSet" data-i18n="dock.settings">设置</button>
   </div>
   <div id="dockSong">
     <button class="x" id="bExit">×</button>
@@ -180,8 +180,8 @@
     <button class="ab" id="bSA" style="display:none" title="把当前进度设为循环起点 A">A</button>
     <button class="ab" id="bSB" style="display:none" title="把当前进度设为循环终点 B">B</button>
     <button class="ab" id="bSLoop" style="display:none" title="开启/关闭 A-B 循环">循环</button>
-    <select id="scoreMode" title="谱面模式"><option value="staff">五线谱</option><option value="jianpu">简谱</option><option value="tiles">钢琴块</option></select>
-    <button id="bAcc" class="off" title="背景伴奏 开/关">伴奏</button>
+    <select id="scoreMode" title="谱面模式"><option value="staff" data-i18n="mode.staff">五线谱</option><option value="jianpu" data-i18n="mode.jianpu">简谱</option><option value="tiles" data-i18n="mode.tiles">钢琴块</option></select>
+    <button id="bAcc" class="off" data-i18n="dock.accomp" title="背景伴奏 开/关">伴奏</button>
     <span class="score" id="score">—</span>
   </div>
   <div id="dockPractice">
@@ -197,78 +197,79 @@
 <div id="setPop">
   <div id="setHead">
     <button id="setBack" title="返回">‹</button>
-    <span id="setTitle">设置</span>
+    <span id="setTitle" data-i18n="set.title">设置</span>
   </div>
   <div id="setGrid">
-    <div class="card" data-pane="appearance"><b>外观</b><small>主题 · 高亮 · 音名</small></div>
-    <div class="card" data-pane="sound"><b>音色</b><small>输出 · 音色包 · 混响</small></div>
-    <div class="card" data-pane="follow"><b>跟弹练习</b><small>评分 · 难度 · 循环 · 分离</small></div>
-    <div class="card" data-pane="keys"><b>键盘弹奏</b><small>电脑键盘 · 力度 · 踏板</small></div>
-    <div class="card" data-pane="rec"><b>录音</b><small>录制 · 回放</small></div>
-    <div class="card" data-pane="misc"><b>通用</b><small>诊断 · 重置 · 版本</small></div>
+    <div class="card" data-pane="appearance"><b data-i18n="cat.appearance">外观</b><small data-i18n="cat.appearance.sub">主题 · 高亮 · 音名</small></div>
+    <div class="card" data-pane="sound"><b data-i18n="cat.sound">音色</b><small data-i18n="cat.sound.sub">输出 · 音色包 · 混响</small></div>
+    <div class="card" data-pane="follow"><b data-i18n="cat.follow">跟弹练习</b><small data-i18n="cat.follow.sub">评分 · 难度 · 循环 · 分离</small></div>
+    <div class="card" data-pane="keys"><b data-i18n="cat.keys">键盘弹奏</b><small data-i18n="cat.keys.sub">电脑键盘 · 力度 · 踏板</small></div>
+    <div class="card" data-pane="rec"><b data-i18n="cat.rec">录音</b><small data-i18n="cat.rec.sub">录制 · 回放</small></div>
+    <div class="card" data-pane="misc"><b data-i18n="cat.misc">通用</b><small data-i18n="cat.misc.sub">诊断 · 重置 · 版本</small></div>
   </div>
   <div class="pane" data-pane="appearance">
-    <div class="row"><span>背景主题</span><select id="setBg"><option value="deep">深空</option><option value="warm">暖夜</option><option value="mist">晨雾</option><option value="classic">经典灰</option></select></div>
-    <div class="row"><span>按键高亮</span><label class="sw"><input type="checkbox" id="setHL" checked><i></i></label></div>
-    <div class="row"><span>高亮颜色</span><span id="setColors"></span></div>
-    <div class="row"><span>音名提示</span><label class="sw"><input type="checkbox" id="setNotes" checked><i></i></label></div>
-    <div class="row"><span>音名格式</span><select id="setMode"><option value="name">音名 · C4</option><option value="solfa">唱名 · do</option><option value="jianpu">简谱 · 1</option><option value="midi">MIDI · 60</option></select></div>
-    <div class="row"><span>标签大小</span><input id="setSize" type="range" min="80" max="160" step="5" value="100"></div>
+    <div class="row"><span data-i18n="set.bg">背景主题</span><select id="setBg"><option value="deep" data-i18n="bg.deep">深空</option><option value="warm" data-i18n="bg.warm">暖夜</option><option value="mist" data-i18n="bg.mist">晨雾</option><option value="classic" data-i18n="bg.classic">经典灰</option></select></div>
+    <div class="row"><span data-i18n="set.hl">按键高亮</span><label class="sw"><input type="checkbox" id="setHL" checked><i></i></label></div>
+    <div class="row"><span data-i18n="set.hlColor">高亮颜色</span><span id="setColors"></span></div>
+    <div class="row"><span data-i18n="set.notes">音名提示</span><label class="sw"><input type="checkbox" id="setNotes" checked><i></i></label></div>
+    <div class="row"><span data-i18n="set.mode">音名格式</span><select id="setMode"><option value="name" data-i18n="mode.name">音名 · C4</option><option value="solfa" data-i18n="mode.solfa">唱名 · do</option><option value="jianpu" data-i18n="mode.jianpuOpt">简谱 · 1</option><option value="midi" data-i18n="mode.midi">MIDI · 60</option></select></div>
+    <div class="row"><span data-i18n="set.size">标签大小</span><input id="setSize" type="range" min="80" max="160" step="5" value="100"></div>
   </div>
   <div class="pane" data-pane="sound">
-    <div class="row"><span>音色输出</span><select id="setOut" title="选择本机 MIDI 输出端口，用你的 VST / DAW / 硬件音源发声"><option value="">内置合成器</option></select></div>
-    <div class="row" id="rowSf2" style="display:none"><span>SF2 音色</span>
+    <div class="row"><span data-i18n="set.out">音色输出</span><select id="setOut" data-i18n-title="set.outTitle" title="选择本机 MIDI 输出端口，用你的 VST / DAW / 硬件音源发声"><option value="" data-i18n="out.builtin">内置合成器</option></select></div>
+    <div class="row" id="rowSf2" style="display:none"><span data-i18n="set.sf2">SF2 音色</span>
       <span class="sf2Wrap">
-        <input type="text" id="sf2Search" placeholder="搜索…" title="按名称搜索音色">
-        <button id="sf2FavBtn" title="收藏/取消收藏当前音色">☆</button>
+        <input type="text" id="sf2Search" data-i18n-ph="set.search" data-i18n-title="set.searchTitle" placeholder="搜索…" title="按名称搜索音色">
+        <button id="sf2FavBtn" data-i18n-title="set.favTitle" title="收藏/取消收藏当前音色">☆</button>
         <select id="setSf2" title="只看收藏：先给音色点☆收藏"></select>
       </span>
     </div>
-    <div class="row"><span>音色混响</span><label class="sw"><input type="checkbox" id="setRev"><i></i></label></div>
-    <div class="row"><span>混响强度</span><select id="setRevAmt"><option value="small">轻</option><option value="mid">中</option><option value="big">大</option></select></div>
+    <div class="row"><span data-i18n="set.rev">音色混响</span><label class="sw"><input type="checkbox" id="setRev"><i></i></label></div>
+    <div class="row"><span data-i18n="set.revAmt">混响强度</span><select id="setRevAmt"><option value="small" data-i18n="rev.small">轻</option><option value="mid" data-i18n="rev.mid">中</option><option value="big" data-i18n="rev.big">大</option></select></div>
   </div>
   <div class="pane" data-pane="follow">
-    <div class="row"><span>跟弹流光</span><label class="sw"><input type="checkbox" id="setHint" checked><i></i></label></div>
-    <div class="row"><span>流光颜色</span><span id="setHintColors"></span></div>
-    <div class="row"><span>提前显示</span><input id="setHintLead" type="range" min="0.5" max="4" step="0.5" value="2"></div>
-    <div class="row"><span>跟弹难度</span><select id="setDiff"><option value="1">1 · 练习（±5 半音）</option><option value="2">2 · 简单（±4 半音）</option><option value="3">3 · 普通（±3 半音）</option><option value="4">4 · 严格（±2 半音）</option><option value="5">5 · 最难（精确）</option></select></div>
-    <div class="row"><span>评分结算</span><label class="sw"><input type="checkbox" id="setScores"><i></i></label></div>
-    <div class="row"><span>分段循环</span><label class="sw"><input type="checkbox" id="setLoop2"><i></i></label></div>
-    <div class="row"><span>左右手练习</span><select id="setHands"><option value="both">双手</option><option value="melody">只练旋律</option><option value="acc">只练伴奏</option></select></div>
-    <div class="hintline">分段循环打开后，曲目模式下会出现 A / B / 循环 按钮。<br>左右手分离依赖导入曲目的伴奏声部（内置曲目无此数据）。</div>
+    <div class="row"><span data-i18n="set.hint">跟弹流光</span><label class="sw"><input type="checkbox" id="setHint" checked><i></i></label></div>
+    <div class="row"><span data-i18n="set.hintColor">流光颜色</span><span id="setHintColors"></span></div>
+    <div class="row"><span data-i18n="set.hintLead">提前显示</span><input id="setHintLead" type="range" min="0.5" max="4" step="0.5" value="2"></div>
+    <div class="row"><span data-i18n="set.diff">跟弹难度</span><select id="setDiff"><option value="1" data-i18n="diff.1">1 · 练习（±5 半音）</option><option value="2" data-i18n="diff.2">2 · 简单（±4 半音）</option><option value="3" data-i18n="diff.3">3 · 普通（±3 半音）</option><option value="4" data-i18n="diff.4">4 · 严格（±2 半音）</option><option value="5" data-i18n="diff.5">5 · 最难（精确）</option></select></div>
+    <div class="row"><span data-i18n="set.scores">评分结算</span><label class="sw"><input type="checkbox" id="setScores"><i></i></label></div>
+    <div class="row"><span data-i18n="set.loop">分段循环</span><label class="sw"><input type="checkbox" id="setLoop2"><i></i></label></div>
+    <div class="row"><span data-i18n="set.hands">左右手练习</span><select id="setHands"><option value="both" data-i18n="hands.both">双手</option><option value="melody" data-i18n="hands.melody">只练旋律</option><option value="acc" data-i18n="hands.acc">只练伴奏</option></select></div>
+    <div class="hintline"><span data-i18n="follow.hint1">分段循环打开后，曲目模式下会出现 A / B / 循环 按钮。</span><br><span data-i18n="follow.hint2">左右手分离依赖导入曲目的伴奏声部（内置曲目无此数据）。</span></div>
   </div>
   <div class="pane" data-pane="keys">
-    <div class="row"><span>电脑键盘弹奏</span><label class="sw"><input type="checkbox" id="setKb" checked><i></i></label></div>
-    <div class="row"><span>键盘八度</span><select id="setKbOct"><option value="-2">-2</option><option value="-1">-1</option><option value="0">0</option><option value="1">+1</option><option value="2">+2</option></select></div>
-    <div class="row"><span>力度曲线</span><select id="setVel"><option value="soft">轻触（容易弹响）</option><option value="std">标准</option><option value="hard">重锤（需要用力）</option></select></div>
-    <div class="row"><span>踏板指示</span><label class="sw"><input type="checkbox" id="setPedal"><i></i></label></div>
-    <div class="hintline">电脑键盘 A-K 键可弹奏（S/D/G/H/J 等为黑键）。力度曲线影响 MIDI 键盘与电脑键盘的响度手感。</div>
+    <div class="row"><span data-i18n="set.kb">电脑键盘弹奏</span><label class="sw"><input type="checkbox" id="setKb" checked><i></i></label></div>
+    <div class="row"><span data-i18n="set.kbOct">键盘八度</span><select id="setKbOct"><option value="-2">-2</option><option value="-1">-1</option><option value="0">0</option><option value="1">+1</option><option value="2">+2</option></select></div>
+    <div class="row"><span data-i18n="set.vel">力度曲线</span><select id="setVel"><option value="soft" data-i18n="vel.soft">轻触（容易弹响）</option><option value="std" data-i18n="vel.std">标准</option><option value="hard" data-i18n="vel.hard">重锤（需要用力）</option></select></div>
+    <div class="row"><span data-i18n="set.pedal">踏板指示</span><label class="sw"><input type="checkbox" id="setPedal"><i></i></label></div>
+    <div class="hintline" data-i18n="keys.hint">电脑键盘 A-K 键可弹奏（S/D/G/H/J 等为黑键）。力度曲线影响 MIDI 键盘与电脑键盘的响度手感。</div>
   </div>
   <div class="pane" data-pane="rec">
-    <div class="row"><span>录音与回放</span><label class="sw"><input type="checkbox" id="setRecOn"><i></i></label></div>
-    <div class="hintline">打开后底部出现「● 录音」按钮：录制你的弹奏（含踏板），支持回放与清除。<br>录音保存在内存中，关闭应用后消失。</div>
+    <div class="row"><span data-i18n="set.recOn">录音与回放</span><label class="sw"><input type="checkbox" id="setRecOn"><i></i></label></div>
+    <div class="hintline"><span data-i18n="rec.hint1">打开后底部出现「● 录音」按钮：录制你的弹奏（含踏板），支持回放与清除。</span><br><span data-i18n="rec.hint2">录音保存在内存中，关闭应用后消失。</span></div>
   </div>
   <div class="pane" data-pane="misc">
-    <div class="row"><span>诊断信息</span><button class="mini" id="bDiag">复制</button></div>
-    <div class="row"><span>恢复默认设置</span><button class="mini" id="bReset">重置</button></div>
-    <div class="row"><span>版本</span><span id="setVer" style="color:#94a3b8">v0.3.1</span></div>
+    <div class="row"><span data-i18n="set.lang">语言 / Language</span><select id="setLang"></select></div>
+    <div class="row"><span data-i18n="set.diag">诊断信息</span><button class="mini" id="bDiag" data-i18n="set.diagBtn">复制</button></div>
+    <div class="row"><span data-i18n="set.reset">恢复默认设置</span><button class="mini" id="bReset" data-i18n="set.resetBtn">重置</button></div>
+    <div class="row"><span data-i18n="set.version">版本</span><span id="setVer" style="color:#94a3b8">v0.3.2</span></div>
   </div>
 </div>
 <div id="resultPop"></div>
 <div id="recPop">
-  <div class="row"><span>录音</span><button id="bRecToggle">● 开始</button></div>
-  <div class="row"><span>回放</span><button id="bRecPlay">▶ 播放</button></div>
-  <div class="row"><span>清除</span><button id="bRecClear">■ 清除</button></div>
-  <div id="recInfo" style="color:#94a3b8;font-size:11.5px;padding-top:2px">暂无录音</div>
+  <div class="row"><span data-i18n="rec.title">录音</span><button id="bRecToggle" data-i18n="rec.start">● 开始</button></div>
+  <div class="row"><span data-i18n="rec.rowPlay">回放</span><button id="bRecPlay" data-i18n="rec.play">▶ 播放</button></div>
+  <div class="row"><span data-i18n="rec.rowClear">清除</span><button id="bRecClear" data-i18n="rec.clear">■ 清除</button></div>
+  <div id="recInfo" data-i18n="rec.none" style="color:#94a3b8;font-size:11.5px;padding-top:2px">暂无录音</div>
 </div>
-<div id="pedalLed">延音</div>
+<div id="pedalLed" data-i18n="pedal.sustain">延音</div>
 <div id="vig"></div>
 <div id="noteLayer"></div>
 <div id="tips">
-  <div><b>拖拽</b> 旋转视角 · <b>滚轮</b> 缩放 · <b>点琴键</b> 试音 · 电脑键盘 <b>A-K</b> 也能弹</div>
-  <div>底部「<b>曲目</b>」五线谱/简谱/钢琴块 ·「<b>跟弹</b>」不限速度练习</div>
-  <div>「<b>设置</b>」按分类调：外观 / 音色 / 跟弹练习 / 键盘弹奏 / 录音 / 通用</div>
-  <button id="tipsOk">知道了</button>
+  <div data-i18n-html="tips.l1"><b>拖拽</b> 旋转视角 · <b>滚轮</b> 缩放 · <b>点琴键</b> 试音 · 电脑键盘 <b>A-K</b> 也能弹</div>
+  <div data-i18n-html="tips.l2">底部「<b>曲目</b>」五线谱/简谱/钢琴块 ·「<b>跟弹</b>」不限速度练习</div>
+  <div data-i18n-html="tips.l3">「<b>设置</b>」按分类调：外观 / 音色 / 跟弹练习 / 键盘弹奏 / 录音 / 通用</div>
+  <button id="tipsOk" data-i18n="tips.ok">知道了</button>
 </div>
 <div id="tiles"></div>
 <div id="dot"></div>
@@ -276,10 +277,11 @@
 <div id="err"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="./src/createKeyboardModel.js?v=20260913b"></script>
- <script src="./src/soundEngine.js?v=20260912b"></script>
+ <script src="./src/i18n.js?v=20260914a"></script>
+ <script src="./src/soundEngine.js?v=20260914a"></script>
  <script src="./src/sf2Player.js?v=20260912b"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vexflow/3.0.9/vexflow-min.js"></script>
-<script src="./src/followPlay.js?v=20260912a"></script>
+<script src="./src/followPlay.js?v=20260914a"></script>
 <script>
 (function(){
 "use strict";
@@ -445,12 +447,12 @@ function recEvent(type,midi,val,dt){
 function recStart(){
   if(rec.playing)recPlayStop();
   rec.events=[];rec.recording=true;rec.t0=performance.now()/1000;
-  updateRecUI();toast('开始录音');
+  updateRecUI();toast(window.__T('toast.recStart'));
 }
 function recStop(){
   if(!rec.recording)return;
   rec.recording=false;updateRecUI();
-  toast('录音结束 · '+recDur().toFixed(1)+' 秒');
+  toast(window.__T('toast.recEnd',recDur().toFixed(1)));
 }
 function recDur(){
   if(!rec.events.length)return 0;
@@ -460,7 +462,7 @@ function recDur(){
 function recPlayStop(){rec.playing=false;cancelAnimationFrame(rec.raf);updateRecUI();}
 function recPlay(){
   if(rec.playing){recPlayStop();return;}
-  if(!rec.events.length){toast('还没有录音');return;}
+  if(!rec.events.length){toast(window.__T('toast.noRec'));return;}
   if(rec.recording)recStop();
   rec.playing=true;rec.pt=performance.now()/1000;
   var i=0;updateRecUI();
@@ -482,7 +484,7 @@ function recPlay(){
         }
       }catch(_){}
     }
-    if(i>=rec.events.length){rec.playing=false;updateRecUI();toast('回放结束');return;}
+    if(i>=rec.events.length){rec.playing=false;updateRecUI();toast(window.__T('toast.recPlayEnd'));return;}
     rec.raf=requestAnimationFrame(step);
   })();
 }
@@ -490,14 +492,14 @@ function recClear(){recPlayStop();rec.events=[];rec.recording=false;updateRecUI(
 function recCount(){var n=0;for(var i=0;i<rec.events.length;i++)if(rec.events[i].type==='on')n++;return n;}
 function updateRecUI(){
   var t=document.getElementById('bRecToggle');
-  if(t){t.textContent=rec.recording?'■ 停止':'● 开始';t.classList.toggle('rec-on',rec.recording);}
+  if(t){t.textContent=rec.recording?window.__T('rec.stop'):window.__T('rec.start');t.classList.toggle('rec-on',rec.recording);}
   var pb=document.getElementById('bRecPlay');
-  if(pb)pb.textContent=rec.playing?'■ 停止回放':'▶ 播放';
+  if(pb)pb.textContent=rec.playing?window.__T('rec.playStop'):window.__T('rec.play');
   var info=document.getElementById('recInfo');
   if(info){
-    if(rec.recording)info.textContent='正在录音… '+(performance.now()/1000-rec.t0).toFixed(1)+' 秒';
-    else if(rec.events.length)info.textContent='时长约 '+recDur().toFixed(1)+' 秒 · '+recCount()+' 个音符'+(rec.playing?'（回放中）':'');
-    else info.textContent='暂无录音';
+    if(rec.recording)info.textContent=window.__T('rec.recording',(performance.now()/1000-rec.t0).toFixed(1));
+    else if(rec.events.length)info.textContent=window.__T(rec.playing?'rec.infoPlaying':'rec.info',recDur().toFixed(1),recCount());
+    else info.textContent=window.__T('rec.none');
   }
   var db=document.getElementById('bRec');
   if(db)db.classList.toggle('rec-on',rec.recording);
@@ -641,15 +643,15 @@ document.getElementById('tipsOk').onclick=hideTips;
 function bindBest(auto){
   if(!midiAcc)return;
   var list=[];midiAcc.inputs.forEach(function(i){list.push(i);});
-  if(!list.length){dotOn(false);if(!started)setSplash('未检测到 MIDI 键盘 · 用鼠标弹奏','开始弹奏');return;}
+  if(!list.length){dotOn(false);if(!started)setSplash(window.__T('splash.noMidi'),window.__T('splash.play'));return;}
   var pick=null;
   for(var i=0;i<list.length;i++){if(/keyboard|piano|m-vave|smk|usb|midi/i.test(list[i].name||'')){pick=list[i];break;}}
   if(!pick)pick=list[0];
   if(midiIn)midiIn.onmidimessage=null;
   midiIn=pick;midiIn.onmidimessage=onMIDI;
   dotOn(true);
-  if(!started)setSplash('已检测到 '+(pick.name||'MIDI 键盘'),'开始弹奏');
-  else toast('已连接 '+(pick.name||'MIDI 键盘'));
+  if(!started)setSplash(window.__T('splash.found',pick.name||'MIDI'),window.__T('splash.play'));
+  else toast(window.__T('toast.connected',pick.name||'MIDI'));
 }
 function onMIDI(ev){
   var d=ev.data,st=d[0],cmd=st&0xF0;
@@ -681,15 +683,15 @@ function refreshOutSel(){
   sel.innerHTML='';
   var o0=document.createElement('option');o0.value='';o0.textContent='内置合成器';sel.appendChild(o0);
   SF2_BANKS.forEach(function(b){
-    var ob=document.createElement('option');ob.value='__sf2b:'+b.file;ob.textContent='音色包 · '+b.label;sel.appendChild(ob);
+    var ob=document.createElement('option');ob.value='__sf2b:'+b.file;ob.textContent=window.__T('out.bankPrefix')+b.label;sel.appendChild(ob);
   });
   if(sf2Ready()&&window.__sf2src==='__sf2'){
     var os=document.createElement('option');os.value='__sf2';
-    os.textContent='SoundFont：'+String(window.__sf2.name||'').slice(0,18);sel.appendChild(os);
+    os.textContent=window.__T('out.sfPrefix')+String(window.__sf2.name||'').slice(0,18);sel.appendChild(os);
   }
-  var ol=document.createElement('option');ol.value='__sf2load';ol.textContent='＋ 加载 SoundFont (.sf2)…';sel.appendChild(ol);
+  var ol=document.createElement('option');ol.value='__sf2load';ol.textContent=window.__T('out.loadSF');sel.appendChild(ol);
   listOuts().forEach(function(p){
-    var o=document.createElement('option');o.value=p.id;o.textContent='MIDI: '+p.name;sel.appendChild(o);
+    var o=document.createElement('option');o.value=p.id;o.textContent=window.__T('out.midiPrefix')+p.name;sel.appendChild(o);
   });
   var has=false;
   for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===cur)has=true;}
@@ -736,8 +738,8 @@ function populateSf2Presets(){
     });
     sel.appendChild(og);
   }
-  fill('★ 收藏',favs);
-  fill(q?'搜索结果':'全部音色',others);
+  fill(window.__T('fav.group'),favs);
+  fill(window.__T(q?'search.group':'all.group'),others);
   var found=false;
   for(var i=0;i<sel.options.length;i++){if(parseInt(sel.options[i].value,10)===SET.sf2preset){found=true;break;}}
   if(found)sel.value=String(SET.sf2preset);
@@ -760,10 +762,10 @@ function mountSf2(buf,label,src){
     populateSf2Presets();
     if(window.__applyRev)window.__applyRev();
     refreshOutSel();
-    if(window.__ui)window.__ui.toast('已加载音色包：'+label+'（'+info.presets.length+' 个音色）');
+    if(window.__ui)window.__ui.toast(window.__T('toast.loadedBank',label,info.presets.length));
     return true;
   }catch(e){
-    if(window.__ui)window.__ui.toast('SF2 解析失败：'+((e&&e.message)||e));
+    if(window.__ui)window.__ui.toast(window.__T('toast.sf2fail',(e&&e.message)||e));
     return false;
   }
 }
@@ -781,14 +783,14 @@ function loadSf2Bundled(bank){
     SET.outport=window.__sf2src;saveSET();
     populateSf2Presets();refreshOutSel();return;
   }
-  if(window.__ui)window.__ui.toast('正在加载 '+bank.label+' …');
+  if(window.__ui)window.__ui.toast(window.__T('toast.loadingBank',bank.label));
   fetch('./sounds/'+bank.file).then(function(r){
     if(!r.ok)throw new Error('HTTP '+r.status);
     return r.arrayBuffer();
   }).then(function(b){
     mountSf2(b,bank.label,'__sf2b:'+bank.file);
   }).catch(function(e){
-    if(window.__ui)window.__ui.toast('音色包加载失败：'+((e&&e.message)||e));
+    if(window.__ui)window.__ui.toast(window.__T('toast.bankFail',(e&&e.message)||e));
   });
 }
 (function initSf2Input(){
@@ -870,15 +872,15 @@ function midiCC(cc,val){
   if(kb)kb.spin.rotation.y=-2.3+(val/127)*4.6;
 }
 (function scanMIDI(){
-  setSplash('正在扫描 MIDI 键盘…');
+  setSplash(window.__T('splash.scan'));
   if(!navigator.requestMIDIAccess){
-    setSplash('此环境不支持 MIDI · 用鼠标弹奏','开始弹奏');return;
+    setSplash(window.__T('splash.noSupport'),window.__T('splash.play'));return;
   }
   navigator.requestMIDIAccess().then(function(acc){
     midiAcc=acc;acc.onstatechange=function(){bindBest();refreshOutSel();};
     bindBest();refreshOutSel();
   },function(){
-    setSplash('未检测到 MIDI 键盘 · 用鼠标弹奏','开始弹奏');
+    setSplash(window.__T('splash.noMidi'),window.__T('splash.play'));
     // 部分环境（WebView2）要求用户手势后才允许 MIDI，首次点击时静默重试
     var retry=function(){
       if(midiAcc)return;
@@ -907,7 +909,8 @@ document.addEventListener('click',function(e){if(!songPop.contains(e.target))son
   var saved=null;try{saved=localStorage.getItem('smk25timbre');}catch(_){}
   var cur=saved&&list.some(function(t){return t.id===saved;})?saved:(list[0]&&list[0].id);
   list.forEach(function(t){
-    var o=document.createElement('option');o.value=t.id;o.textContent=t.label;
+    var o=document.createElement('option');o.value=t.id;
+    o.textContent=window.__T('timbre.'+t.id)||t.label;
     if(t.id===cur)o.selected=true;
     sel.appendChild(o);
   });
@@ -933,8 +936,14 @@ var NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 var SOLFA_NAMES=['do','do#','re','re#','mi','fa','fa#','sol','sol#','la','la#','si'];
 var JP_NAMES=['1','#1','2','#2','3','4','#4','5','#5','6','#6','7'];
 var SET={hl:true,color:'#22d3ee',notes:true,mode:'name',size:100,hint:true,hintColor:'#fbbf24',hintLead:2,diff:5,bg:'deep',outport:'',sf2preset:0,
-scores:false,loopAB:false,hands:'both',reverb:false,revAmt:'mid',pedalLed:false,velCurve:'std',kbPlay:true,kbOct:0,recOn:false,sf2fav:[]};
+scores:false,loopAB:false,hands:'both',reverb:false,revAmt:'mid',pedalLed:false,velCurve:'std',kbPlay:true,kbOct:0,recOn:false,sf2fav:[],lang:''};
 try{var _stored=JSON.parse(localStorage.getItem('smk25set')||'{}');for(var _sk in SET){if(_stored[_sk]!==undefined)SET[_sk]=_stored[_sk];}}catch(_){}
+(function initLang(){
+  var ok=false;
+  try{window.__langList().forEach(function(l){if(l.id===SET.lang)ok=true;});}catch(_){}
+  if(!ok)SET.lang=window.__getLang();
+  window.__setLang(SET.lang);
+})();
 function saveSET(){try{localStorage.setItem('smk25set',JSON.stringify(SET));}catch(_){}}
 /* ---------- 背景主题 ---------- */
 var BG_THEMES={
@@ -1065,18 +1074,18 @@ function applySET(){
 /* ---------- 诊断信息 ---------- */
 function buildDiag(){
   var lines=[];
-  lines.push('流光钢琴 诊断信息 · '+new Date().toLocaleString());
-  lines.push('版本: v0.3.1'+(window.__TAURI__?' (桌面版)':' (网页版)'));
-  lines.push('WebView: '+String(navigator.userAgent||'').slice(0,130));
+  lines.push(window.__T('diag.header',new Date().toLocaleString()));
+  lines.push(window.__T('diag.version','v0.3.2',window.__TAURI__?window.__T('diag.desktop'):window.__T('diag.web')));
+  lines.push(window.__T('diag.webview')+String(navigator.userAgent||'').slice(0,130));
   var ins=[],outs=[];
   if(midiAcc){midiAcc.inputs.forEach(function(i){ins.push(i.name||i.id);});midiAcc.outputs.forEach(function(o){outs.push(o.name||o.id);});}
-  lines.push('MIDI 输入: '+(ins.join(' / ')||'无'));
-  lines.push('MIDI 输出: '+(outs.join(' / ')||'无'));
-  lines.push('音色输出: '+(SET.outport||'内置合成器'));
-  lines.push('SF2: '+((window.__sf2&&window.__sf2.presets.length)?(window.__sf2.name+' · '+window.__sf2.presets.length+' 音色'):'未加载'));
-  lines.push('设置: '+JSON.stringify(SET));
-  lines.push('最近错误:');
-  if(!__errlog.length)lines.push(' 无');
+  lines.push(window.__T('diag.midiIn')+(ins.join(' / ')||window.__T('diag.none')));
+  lines.push(window.__T('diag.midiOut')+(outs.join(' / ')||window.__T('diag.none')));
+  lines.push(window.__T('diag.out')+(SET.outport||window.__T('out.builtin')));
+  lines.push(window.__T('diag.sf2')+((window.__sf2&&window.__sf2.presets.length)?(window.__sf2.name+' · '+window.__sf2.presets.length):window.__T('diag.unloaded')));
+  lines.push(window.__T('diag.settings')+JSON.stringify(SET));
+  lines.push(window.__T('diag.errors'));
+  if(!__errlog.length)lines.push(' '+window.__T('diag.none'));
   else for(var i=0;i<__errlog.length;i++)lines.push(' '+__errlog[i]);
   return lines.join('\n');
 }
@@ -1086,9 +1095,9 @@ function copyDiag(){
     var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';
     document.body.appendChild(ta);ta.select();
     try{document.execCommand('copy');}catch(_){}
-    document.body.removeChild(ta);toast('诊断信息已复制');
+    document.body.removeChild(ta);toast(window.__T('toast.diagCopied'));
   }
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){toast('诊断信息已复制');},fallback);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){toast(window.__T('toast.diagCopied'));},fallback);}
   else fallback();
 }
 /* ---------- 跟弹流光提示（下一个要按的键 · 环绕光带） ---------- */
@@ -1223,12 +1232,12 @@ function setNextHint(p){
         SET.outport=v;saveSET();
         if(bank)loadSf2Bundled(bank);
         refreshOutSel();
-        if(window.__ui)window.__ui.toast('音色输出：'+(bank?bank.label:v));
+        if(window.__ui)window.__ui.toast(window.__T('toast.outBank',bank?bank.label:v));
         return;
       }
       SET.outport=v;saveSET();
       refreshOutSel();
-      if(window.__ui)window.__ui.toast(v?(v==='__sf2'?'音色输出：SoundFont 音色包':'音色输出：外部 MIDI 端口'):'已切回内置合成器');
+      if(window.__ui)window.__ui.toast(v?(v==='__sf2'?window.__T('toast.outBank','SoundFont'):window.__T('toast.outMidi')):window.__T('toast.outBuiltin'));
     };
     var psel=document.getElementById('setSf2');
     if(psel){psel.onchange=function(){
@@ -1297,7 +1306,7 @@ function setNextHint(p){
     var key=sf2Keyof(orig);var list=sf2FavList();var i=list.indexOf(key);
     if(i>=0)list.splice(i,1);else list.push(key);
     SET.sf2fav=list;saveSET();populateSf2Presets();window.__sf2RefreshFav();
-    toast(i>=0?'已取消收藏':'已收藏');
+    toast(window.__T(i>=0?'toast.unfav':'toast.fav'));
   };
   /* ---- 录音设置 ---- */
   var ron=document.getElementById('setRecOn');ron.checked=!!SET.recOn;
@@ -1305,9 +1314,23 @@ function setNextHint(p){
   /* ---- 通用 ---- */
   document.getElementById('bDiag').onclick=copyDiag;
   document.getElementById('bReset').onclick=function(){
-    if(!confirm('恢复所有设置为默认值？'))return;
+    if(!confirm(window.__T('reset.confirm')))return;
     try{localStorage.removeItem('smk25set');}catch(_){}
     location.reload();
+  };
+  /* ---- 语言 ---- */
+  var langSel=document.getElementById('setLang');
+  if(langSel){
+    window.__langList().forEach(function(l){
+      var o=document.createElement('option');o.value=l.id;o.textContent=l.name;langSel.appendChild(o);
+    });
+    langSel.value=SET.lang;
+    langSel.onchange=function(){SET.lang=langSel.value;saveSET();window.__setLang(SET.lang);};
+  }
+  window.__smk25Retrans=function(){
+    try{refreshOutSel();}catch(_){}
+    try{if(sf2Ready())populateSf2Presets();}catch(_){}
+    try{updateRecUI();}catch(_){}
   };
   applySET();
 })();
@@ -1386,13 +1409,13 @@ window.__ui={
     for(var i=0;i<3;i++)ss+=i<nStar?'★':'☆';
     st.textContent=ss;el.appendChild(st);
     function line(k,v){var d=document.createElement('div');d.className='ln';var a=document.createElement('span');a.textContent=k;var b=document.createElement('b');b.textContent=v;d.appendChild(a);d.appendChild(b);el.appendChild(d);}
-    line('准确率',Math.round((o.acc||0)*100)+'%');
-    line('最大连击','x'+(o.maxCombo||0));
-    if(o.total!=null)line('音符数',String(o.total));
+    line(window.__T('result.acc'),Math.round((o.acc||0)*100)+'%');
+    line(window.__T('result.combo'),'x'+(o.maxCombo||0));
+    if(o.total!=null)line(window.__T('result.notes'),String(o.total));
     var btns=document.createElement('div');btns.className='btns';
-    var b1=document.createElement('button');b1.className='pri';b1.textContent='再来一次';
+    var b1=document.createElement('button');b1.className='pri';b1.textContent=window.__T('result.retry');
     b1.onclick=function(){el.classList.remove('show');if(o.retry)o.retry();};
-    var b2=document.createElement('button');b2.textContent='关闭';
+    var b2=document.createElement('button');b2.textContent=window.__T('result.close');
     b2.onclick=function(){el.classList.remove('show');if(o.exit)o.exit();};
     btns.appendChild(b1);btns.appendChild(b2);el.appendChild(btns);
     el.classList.add('show');
@@ -1406,7 +1429,7 @@ window.__ui={
   document.addEventListener('click',function(e){if(rp&&rp.classList.contains('show')&&!rp.contains(e.target)&&e.target!==rb)rp.classList.remove('show');});
   var bt=$id('bRecToggle');if(bt)bt.onclick=function(){rec.recording?recStop():recStart();updateRecUI();};
   var bp=$id('bRecPlay');if(bp)bp.onclick=function(){recPlay();};
-  var bc=$id('bRecClear');if(bc)bc.onclick=function(){recClear();toast('录音已清除');};
+  var bc=$id('bRecClear');if(bc)bc.onclick=function(){recClear();toast(window.__T('toast.recCleared'));};
 })();
 /* 跟弹模块挂载 */
 if(window.SMK25Follow)window.SMK25Follow.init({
